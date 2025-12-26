@@ -1,0 +1,175 @@
+:root {
+    --note-opacity: 0;
+}
+
+html {
+    background-color: #191724;
+    color: #e0def4;
+    font-family: Verdana;
+}
+
+body {
+    max-width: 1600px;
+    padding: 25px;
+    margin: 0 auto;
+}
+
+#board {
+    display: flex;
+    /* border: 2px solid peach; */
+    /* border-right: 2px solid #f6c177; */
+    overflow: visible;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    flex-direction: column-reverse;
+    width: 100%;
+    margin-top: 20px;
+    background: #6e6a86;
+}
+
+.string-row {
+    display: flex;
+    height: 30px;
+    position: relative;
+    min-width: 0;
+    max-width: none;
+    overflow: visible;
+}
+
+/* string as pseudo element */
+.fw::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: -6px;
+    top: 50%;
+    height: var(--before-height, 2px);
+    background: #333;
+}
+
+.marker {
+    width: 22px;
+    height: 22px;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #f6c177;
+    border-radius: 50%;
+}
+
+.marker12Top {
+    /* transform: translate(-50%, 0%); */
+    top: 15px;
+}
+
+.marker12Bottom {
+    top: 15px;
+}
+
+.nut {
+    width: 16px; /* prevent fretboard corruption */
+    display: flex;
+    position: absolute;
+    transform: translatex(-8px);
+    top: 0;
+    bottom: 0;
+    /* border: 2px solid red; */
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    text-align: center;
+    /* justify-content: end; */
+    /* font-size: 12px; */
+    z-index: 11;
+    cursor: pointer;
+}
+
+.nut p {
+    /* display: block; */
+    /* position: relative; */
+    /* left: 6.5px; */
+    /* display: inline-block; */
+}
+
+.fw {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    /* padding-right: 11px; */
+    border-right: 4px solid #c4a7e7;
+    box-sizing: border-box;
+    position: relative;
+    overflow: visible;
+    z-index: 2;
+
+    cursor: pointer;
+}
+
+.fw:last-child {
+}
+
+.nut .finger {
+    font-size: 1.7em;
+    position: relative;
+}
+
+#fretNums {
+    display: flex;
+    box-sizing: border-box;
+    position: relative;
+    overflow: visible;
+}
+
+.fretNumber {
+    font-size: 12px;
+    display: flex;
+    justify-content: end;
+    color: #888;
+    pointer-events: none;
+    /* width: auto; */
+
+    /* user-select: none; */
+    /* -webkit-user-select: none; */
+}
+
+.fretNumber p {
+    position: relative;
+    left: 4px;
+    display: inline-block;
+}
+
+.emb {
+    width: 36px;
+    height: 36px;
+    /* right: 7px; */
+    position: absolute;
+    /* display: flex; */
+    /* justify-self: center; */
+    border: 3px solid #87b249;
+    text-align: center;
+    align-content: center;
+    border-radius: 50%;
+    background-color: teal;
+    box-sizing: border-box;
+
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.nut .emb {
+    background-color: blue;
+    /* left: -8px; */
+}
+
+.fw:hover .emb {
+    opacity: 0.5;
+}
+
+.emb.active {
+    opacity: 1;
+}
+
+.fw:hover .emb.active {
+    opacity: 1;
+}
