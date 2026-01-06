@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
-	"github.com/aarol/reload"
-
 	"net/http"
+
+	"github.com/aarol/reload"
 )
 
 func main() {

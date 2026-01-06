@@ -5,26 +5,39 @@
 html {
     background-color: #191724;
     color: #e0def4;
-    font-family: Verdana;
 }
 
 body {
     max-width: 1600px;
     padding: 25px;
     margin: 0 auto;
+    font-family: Rubik, sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 200;
+    font-style: normal;
+}
+
+header {
+	display:flex;
+
+	/* border:1px solid yellow; */
+
+	align-items: center;
+}
+
+header h1,h2 {
+	margin: 20px;
 }
 
 #board {
     display: flex;
-    /* border: 2px solid peach; */
-    /* border-right: 2px solid #f6c177; */
     overflow: visible;
     padding-top: 2px;
     padding-bottom: 2px;
     flex-direction: column-reverse;
     width: 100%;
     margin-top: 20px;
-    background: #6e6a86;
+    background: #502F26;
 }
 
 .string-row {
@@ -41,29 +54,31 @@ body {
     content: '';
     position: absolute;
     left: 0;
-    right: -6px;
+    right: -5px;
     top: 50%;
     height: var(--before-height, 2px);
-    background: #333;
+    background: #7B6B6B;
 }
+
 
 .marker {
     width: 22px;
     height: 22px;
     position: absolute;
-    top: 0;
+	top:2px;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #f6c177;
+    background-color:#C3957E;
     border-radius: 50%;
+    z-index: -1;
 }
 
-.marker12Top {
+.marker-12-bottom {
     /* transform: translate(-50%, 0%); */
     top: 15px;
 }
 
-.marker12Bottom {
+.marker-12-top {
     top: 15px;
 }
 
@@ -71,105 +86,155 @@ body {
     width: 16px; /* prevent fretboard corruption */
     display: flex;
     position: absolute;
-    transform: translatex(-8px);
+    transform: translateX(-8px);
     top: 0;
     bottom: 0;
-    /* border: 2px solid red; */
     justify-content: center;
     align-items: center;
     box-sizing: border-box;
     text-align: center;
-    /* justify-content: end; */
-    /* font-size: 12px; */
     z-index: 11;
     cursor: pointer;
 }
 
-.nut p {
-    /* display: block; */
-    /* position: relative; */
-    /* left: 6.5px; */
-    /* display: inline-block; */
-}
-
+/* fret border  */
 .fw {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    /* padding-right: 11px; */
-    border-right: 4px solid #c4a7e7;
+    border-right: 4px solid #888;
     box-sizing: border-box;
     position: relative;
     overflow: visible;
     z-index: 2;
-
     cursor: pointer;
 }
 
-.fw:last-child {
-}
 
-.nut .finger {
-    font-size: 1.7em;
-    position: relative;
-}
-
-#fretNums {
+#fret-nums {
     display: flex;
     box-sizing: border-box;
     position: relative;
     overflow: visible;
 }
 
-.fretNumber {
-    font-size: 12px;
+.fret-number {
+    font-size: 14px;
     display: flex;
     justify-content: end;
     color: #888;
     pointer-events: none;
+
     /* width: auto; */
 
     /* user-select: none; */
+
     /* -webkit-user-select: none; */
 }
 
-.fretNumber p {
+.fret-number p {
     position: relative;
-    left: 4px;
     display: inline-block;
+    transform: translate(50%, 0);
 }
 
 .emb {
     width: 36px;
     height: 36px;
-    /* right: 7px; */
     position: absolute;
-    /* display: flex; */
-    /* justify-self: center; */
-    border: 3px solid #87b249;
     text-align: center;
     align-content: center;
     border-radius: 50%;
-    background-color: teal;
+    background-color: #535F4F;
     box-sizing: border-box;
-
     opacity: 0;
-    transition: opacity 0.2s ease;
+    transition: opacity 0.3s ease-out;
 }
 
-.nut .emb {
-    background-color: blue;
-    /* left: -8px; */
-}
 
+@media (hover: hover) {
 .fw:hover .emb {
     opacity: 0.5;
+}
 }
 
 .emb.active {
     opacity: 1;
 }
 
+@media (hover: hover) {
 .fw:hover .emb.active {
+    opacity: 1;
+}
+}
+
+#dash {
+	display:flex;
+	flex-direction: row;
+	align-items: center;
+	font-size:16px;
+}
+
+#dash #up,
+#dash #down,
+#dash #midleft,
+#dash #midright,
+#dash .sign-toggle,
+#dash #flats{
+	background-color: #6e6a86;
+	color: #fff;
+	font-size: inherit;
+    cursor: pointer;
+	border-style: none;
+	border-radius: 24px;
+}
+
+#dash #up:hover,
+#dash #down:hover,
+#dash #midleft:hover,
+#dash #midright:hover,
+#dash #sign-toggle:hover,
+#dash #flats:hover{
+	background-color: pink;
+	color: #191724;
+}
+
+.centerdash {
+	border: none;
+	display: flex;
+}
+
+.centerdash > * {
+	padding: 15px;
+	margin: 10px;
+}
+
+
+
+#dash span {
+	display: inline-block;
+	width: 32px;
+}
+
+.fade-out {
+	color: pink;
+    transition: opacity 0.2s ease-out;
+}
+
+.third-color {
+	background-color: #1E3B41;
+}
+
+.fifth-color {
+	background-color:#7B344A;
+}
+
+#triad-info {
+	font-size: 32px;
+	opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+#triad-info.fade-in {
     opacity: 1;
 }

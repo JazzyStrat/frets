@@ -83,7 +83,6 @@ function calcTriadType() {
     }
 
     triadInfo.innerHTML = `<b>${root} ${quality}</b> <i>${inversion}`
-    triadInfo.classList.add('fade-in')
 }
 
 const noteMap = new Map([
@@ -138,14 +137,15 @@ function buildFretboard() {
     }
 
     let abs = 0 // discrete absolute pitches (0 == Open Lo E)
-    const stringGauges = [0.046, 0.036, 0.026, 0.017, 0.013, 0.01] // in inches
+    let strDia = 5 // string thickness, shrinks
     for (let s = 0; s <= 5; s++) {
         // set string widths
         const row = document.createElement('div')
         row.className = 'string-row'
 
-        const strDia = stringGauges[s] * 100
         row.style.setProperty('--before-height', `${strDia}px`)
+        strDia *= 0.9 // shrink
+
         const string = []
 
         const nutZero = document.createElement('div')
@@ -444,7 +444,7 @@ function invertTriadDown() {
     setTriad(rawAbs)
 }
 
-const signTog = document.getElementById('flats')
+const signTog = document.getElementById('sign-toggle')
 signTog.addEventListener('click', (e) => {
     if (e.target.innerText.includes('b')) {
         toggleSign()

@@ -4,19 +4,35 @@
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>frets</title>
+        <link rel="stylesheet" href="assets/style.css" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
+            rel="stylesheet"
+        />
     </head>
 
-    <link rel="stylesheet" href="assets/style.css" />
     <body>
-        <h2>Triad Land</h2>
-
-        <label for="cars">key:</label>
-        <select id="cars" name="cars">
-            <option value="C">C</option>
-            <option value="D">D</option>
-        </select>
+        <header>
+            <h1>Triad Land</h1>
+            <h2>Pick a Root Note on the fretboard</h2>
+        </header>
+        <div id="dash">
+            <div class="centerdash">
+                <h3>keyboard arrows (↑↓ or jk)</h3>
+                <button id="up">invert up</button>
+                <button id="down">invert down</button>
+            </div>
+            <div class="centerdash">
+                <button id="flats">flats (b)</button>
+                <button id="maj" class="sign-toggle">Major</button>
+                <button id="min" class="sign-toggle">Minor</button>
+            </div>
+        </div>
 
         <div id="board"></div>
+        <div id="triad-info"></div>
         <script src="assets/main.js"></script>
     </body>
 </html>
