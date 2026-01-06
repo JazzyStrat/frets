@@ -16,23 +16,21 @@
     <body>
         <header>
             <h1>Triad Land</h1>
-            <h2>Pick a Root Note on the fretboard</h2>
+            <h3>Pick a Root Note on the fretboard</h3>
         </header>
-        <div id="dash">
-            <div class="centerdash">
-                <h3>keyboard arrows (↑↓ or jk)</h3>
-                <button id="up">invert up</button>
-                <button id="down">invert down</button>
-            </div>
-            <div class="centerdash">
-                <button id="flats">flats (b)</button>
-                <button id="maj" class="sign-toggle">Major</button>
-                <button id="min" class="sign-toggle">Minor</button>
-            </div>
-        </div>
 
         <div id="board"></div>
-        <div id="triad-info"></div>
+        <div id="dash">
+            <div id="triad-info"></div>
+            <div class="centerdash">
+                <h4>keyboard arrows (↑↓ or jk)</h3>
+                <button id="up">invert up</button>
+                <button id="down">invert down</button>
+                <button id="min">Minor</button>
+                <button id="maj">Major</button>
+                <button id="sign-tog">flats (b)</button>
+            </div>
+        </div>
         <script src="assets/main.js"></script>
     </body>
 </html>

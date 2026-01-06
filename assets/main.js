@@ -3,19 +3,42 @@ let strings = []
 
 let currentTriadDivs = []
 
-let signage = '#'
 let root
+let third
+let fifth
 
 let quality
 let inversion
 
+let signage = '#'
+
 let triadInfo = document.getElementById('triad-info')
+let major = document.getElementById('maj')
+let minor = document.getElementById('min')
 
-// cgnst formations = ['root', '1st inv', '2nd inv']
-// let currentInv = -1
-// let currentRoot
+minor.addEventListener('click', (e) => {
+    if (quality != 'min') {
+        let thirdIdx = currentTriadDivs.indexOf(third)
+        currentTriadDivs[thirdIdx].lastElementChild.classList.remove('active')
+        currentTriadDivs[thirdIdx] = third.previousElementSibling
 
-let init = false
+        currentTriadDivs[thirdIdx].lastElementChild.classList.add('active')
+        calcTriadType()
+        updateDash()
+    }
+})
+
+major.addEventListener('click', (e) => {
+    if (quality != 'maj') {
+        let thirdIdx = currentTriadDivs.indexOf(third)
+        currentTriadDivs[thirdIdx].lastElementChild.classList.remove('active')
+        currentTriadDivs[thirdIdx] = third.nextElementSibling
+
+        currentTriadDivs[thirdIdx].lastElementChild.classList.add('active')
+        calcTriadType()
+        updateDash()
+    }
+})
 const dash = document.getElementById('dash')
 
 let chordStat = document.createElement('h3')
@@ -24,63 +47,69 @@ dash.prepend(chordStat)
 function calcTriadType() {
     const firstInt = currentTriadDivs[1].abs - currentTriadDivs[0].abs
     const secInt = currentTriadDivs[2].abs - currentTriadDivs[1].abs
-    const intConfig = `${firstInt},${secInt}`
+    const intervals = `${firstInt},${secInt}`
+
     currentTriadDivs.forEach((d) => {
         d.lastElementChild.classList.remove('third-color')
         d.lastElementChild.classList.remove('fifth-color')
     })
 
-    switch (intConfig) {
-        case '4,3':
-            quality = 'maj'
-            inversion = 'root position'
-            currentTriadDivs[1].lastElementChild.classList.toggle('third-color')
-            currentTriadDivs[2].lastElementChild.classList.toggle('fifth-color')
-            break
-        case '3,5':
-            quality = 'maj'
-            inversion = '1st inversion'
-            currentTriadDivs[0].lastElementChild.classList.toggle('third-color')
-            currentTriadDivs[1].lastElementChild.classList.toggle('fifth-color')
-            break
-        case '5,4':
-            quality = 'maj'
-            inversion = '2nd inversion'
-            currentTriadDivs[2].lastElementChild.classList.toggle('third-color')
-            currentTriadDivs[0].lastElementChild.classList.toggle('fifth-color')
-            break
-        case '3,4':
-            quality = 'min'
-            inversion = 'root position'
-            break
-        case '4,5':
-            quality = 'min'
-            inversion = '1st inversion'
-            break
-        case '5,3':
-            quality = 'min'
-            inversion = '2nd inversion'
-            break
-        case '3,3':
-            quality = 'dim'
-            inversion = 'root position'
-            break
-        case '3,6':
-            quality = 'dim'
-            inversion = 'root position'
-            break
-        case '6,3':
-            quality = 'dim'
-            inversion = 'root position'
-            break
-        case '4,4':
-            quality = 'aug'
-            inversion = 'magic3rd'
-            break
-        default:
-            quality = 'other'
-            inversion = 'other'
+    const chordConfigs = {
+        '4,3': {
+            quality: 'maj',
+            inversion: 'root position',
+            thirdIdx: 1,
+            fifthIdx: 2,
+        },
+        '3,5': {
+            quality: 'maj',
+            inversion: '1st inversion',
+            thirdIdx: 0,
+            fifthIdx: 1,
+        },
+        '5,4': {
+            quality: 'maj',
+            inversion: '2nd inversion',
+            thirdIdx: 2,
+            fifthIdx: 0,
+        },
+        '3,4': {
+            quality: 'min',
+            inversion: 'root position',
+            thirdIdx: 1,
+            fifthIdx: 2,
+        },
+        '4,5': {
+            quality: 'min',
+            inversion: '1st inversion',
+            thirdIdx: 0,
+            fifthIdx: 1,
+        },
+        '5,3': {
+            quality: 'min',
+            inversion: '2nd inversion',
+            thirdIdx: 2,
+            fifthIdx: 0,
+        },
     }
+
+    const config = chordConfigs[intervals]
+    if (config) {
+        quality = config.quality
+        inversion = config.inversion
+
+        third = currentTriadDivs[config.thirdIdx]
+        third.lastElementChild.classList.toggle('third-color')
+
+        fifth = currentTriadDivs[config.fifthIdx]
+        fifth.lastElementChild.classList.toggle('fifth-color')
+    } else {
+        console.log('FAILED TO IDENTIFY')
+    }
+
+    let charCode = root.charCodeAt(0)
+
+    let NextLetter = String.fromCharCode(charCode - 1) // F to G
 
     triadInfo.innerHTML = `<b>${root} ${quality}</b> <i>${inversion}`
     triadInfo.classList.add('fade-in')
@@ -114,7 +143,7 @@ function TwelfthRoot(n) {
 // return note letter
 function absToNote(note) {
     const noteVal = note % 12 // knock down to map val
-    if (signage === '#') {
+    if (signage !== 'g') {
         for (let [k, v] of noteMap.entries()) {
             if (v == noteVal) {
                 return k
@@ -234,40 +263,11 @@ function buildFretboard() {
             note.appendChild(noteText)
 
             note.addEventListener('click', () => {
-                note.classList.toggle('active')
+                // note.classList.toggle('active')
                 callMeBackBaby(note)
             })
         })
     })
-}
-
-// returns lowest possible triad pitches
-function getTriadAbs(root, quality, spread) {
-    // note =     let root = note
-    // default to Maj Triad
-    let third = root + 4
-    let fifth = third + 3
-
-    // mutate as needed from Maj default
-    switch (quality) {
-        case 'MIN':
-            third -= 1
-            break
-        case 'DIM':
-            third -= 1
-            fifth -= 1
-            break
-        case 'AUG':
-            fifth += 1
-    }
-
-    if (spread) {
-        third += 12
-    }
-    // maybe instead of raw abs vals, get the lowest possible divs assoicated with those vals.
-    // meaning choice between string string set or next
-
-    return [root, third, fifth]
 }
 
 function invertUp(triad) {
@@ -285,44 +285,41 @@ function invertDown(triad) {
 }
 
 // sets prioritizing pos over inversion
-function setTriadforReal(cd) {
+function initTriad(cd) {
     console.log(cd.coord, cd.abs) // E on A string: [1,7], 12
 
-    currentTriadDivs.push(cd)
-
-    let thirdDiv
-    let fifthDiv
     const absMajThird = cd.abs + 4
     const absFifth = cd.abs + 7
 
-    while (true) {
-        // if two higher strings exist, attempt placing 0th maj triad
-        if (cd.coord[0] + 2 < strings.length) {
-            for (let f = 0; f < LAST_FRET; ++f) {
-                if (strings[cd.coord[0] + 1][f].abs == absMajThird) {
-                    thirdDiv = strings[cd.coord[0] + 1][f]
-                    break
-                }
+    // if two higher strings exist, attempt placing 0th maj triad
+    if (cd.coord[0] + 2 < strings.length) {
+        for (let f = 0; f < LAST_FRET; ++f) {
+            if (strings[cd.coord[0] + 1][f].abs == absMajThird) {
+                third = strings[cd.coord[0] + 1][f]
+                break
             }
-            for (let f = 0; f < LAST_FRET; ++f) {
-                if (strings[cd.coord[0] + 2][f].abs == absFifth) {
-                    fifthDiv = strings[cd.coord[0] + 2][f]
-                    strings[cd.coord[0] + 2][f]
+        }
+        for (let f = 0; f < LAST_FRET; ++f) {
+            if (strings[cd.coord[0] + 2][f].abs == absFifth) {
+                fifth = strings[cd.coord[0] + 2][f]
+                strings[cd.coord[0] + 2][f]
 
-                    currentTriadDivs.push(thirdDiv)
-                    currentTriadDivs.push(fifthDiv)
-                    calcTriadType()
-                    break
-                }
+                root = cd.lastElementChild.innerText
+                currentTriadDivs.push(cd)
+                currentTriadDivs.push(third)
+                currentTriadDivs.push(fifth)
+                break
             }
-
-            currentTriadDivs.forEach((d) => {
-                d.lastElementChild.classList.toggle('active')
-            })
         }
 
-        return
+        currentTriadDivs.forEach((d) => {
+            d.lastElementChild.classList.toggle('active')
+        })
     }
+    calcTriadType()
+    updateDash()
+
+    return
 }
 
 function setTriad(triad, off, fretDelim) {
@@ -357,6 +354,7 @@ function setTriad(triad, off, fretDelim) {
                 div.lastElementChild.classList.toggle('active') // unhide
             })
             calcTriadType()
+            updateDash()
             return // get the hell outta here
         } else {
             // finding lowest possible + least inverted chord
@@ -380,6 +378,17 @@ function setTriad(triad, off, fretDelim) {
             }
         }
     }
+}
+
+function updateDash() {
+    if (quality === 'maj') {
+        major.classList.add('active')
+        minor.classList.remove('active')
+    } else {
+        minor.classList.add('active')
+        major.classList.remove('active')
+    }
+    console.log('quality:', quality)
 }
 
 function toggleSign() {
@@ -418,6 +427,7 @@ function toggleSign() {
             }
         }
     }
+    // update root HERE?
 }
 
 function invertTriadUp() {
@@ -444,7 +454,7 @@ function invertTriadDown() {
     setTriad(rawAbs)
 }
 
-const signTog = document.getElementById('flats')
+const signTog = document.getElementById('sign-tog')
 signTog.addEventListener('click', (e) => {
     if (e.target.innerText.includes('b')) {
         toggleSign()
@@ -453,6 +463,7 @@ signTog.addEventListener('click', (e) => {
         toggleSign()
         e.target.innerText = 'flats (b)'
     }
+    calcTriadType()
 })
 
 const upButton = document.getElementById('up')
@@ -490,7 +501,7 @@ function displayWarning() {
 buildFretboard()
 
 function callMeBackBaby(clickedDiv) {
-    root = clickedDiv.lastElementChild.innerText
+    // clear notes
     currentTriadDivs.forEach((div) => {
         div.lastElementChild.classList.toggle('active')
     })
@@ -498,7 +509,7 @@ function callMeBackBaby(clickedDiv) {
 
     // let rt = getTriadAbs(clickedDiv.abs, 'MAJ')
     // setTriad(rt)
-    setTriadforReal(clickedDiv)
+    initTriad(clickedDiv)
 }
 
 document.addEventListener('keydown', (event) => {
