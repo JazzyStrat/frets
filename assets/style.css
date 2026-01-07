@@ -30,7 +30,7 @@ header h1,h3 {
 	padding: 20px;
 }
 
-#board {
+#board, #board2 {
     display: flex;
     overflow: visible;
     padding-top: 2px;

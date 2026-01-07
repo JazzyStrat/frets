@@ -1,6 +1,10 @@
 let LAST_FRET = 15
 let strings = []
 
+let strings2 = []
+
+let boardsStrings = [strings, strings2]
+
 let currentTriadDivs = []
 
 let root
@@ -152,8 +156,8 @@ function absToNote(note) {
     }
 }
 
-function buildFretboard() {
-    const board = document.getElementById('board')
+function buildFretboard(boardId, stringsArr) {
+    const board = document.getElementById(boardId)
 
     // calc fret widths
     const fretWidths = []
@@ -230,7 +234,7 @@ function buildFretboard() {
             row.appendChild(fw)
         }
 
-        strings.push(string)
+        stringsArr.push(string)
         board.appendChild(row)
     }
 
@@ -253,7 +257,7 @@ function buildFretboard() {
     board.insertAdjacentElement('afterend', fretNums)
 
     // add hidden, togglable notes
-    strings.forEach((string) => {
+    stringsArr.forEach((string) => {
         string.forEach((note) => {
             const noteText = document.createElement('p')
             noteText.classList.add('emb')
@@ -263,8 +267,11 @@ function buildFretboard() {
             note.appendChild(noteText)
 
             note.addEventListener('click', () => {
-                // note.classList.toggle('active')
-                callMeBackBaby(note)
+                note.lastElementChild.classList.toggle('active')
+                if (boardId == 'board') {
+                    note.lastElementChild.classList.toggle('active')
+                    callMeBackBaby(note)
+                }
             })
         })
     })
@@ -397,36 +404,41 @@ function toggleSign() {
         sharps = true
     }
     if (sharps) {
-        for (let i = 0; i < strings.length; i++) {
-            for (let j = 0; j < strings[i].length; j++) {
-                if (strings[i][j].innerText.length > 1) {
-                    let letter = strings[i][j].innerText[0]
-                    let ascii = letter.charCodeAt(0)
-                    if (letter != 'G') {
-                        letter = String.fromCharCode(ascii + 1)
-                    } else {
-                        letter = 'A'
+        boardsStrings.forEach((board) => {
+            for (let i = 0; i < board.length; i++) {
+                for (let j = 0; j < board[i].length; j++) {
+                    if (board[i][j].innerText.length > 1) {
+                        let letter = board[i][j].innerText[0]
+                        let ascii = letter.charCodeAt(0)
+                        if (letter != 'G') {
+                            letter = String.fromCharCode(ascii + 1)
+                        } else {
+                            letter = 'A'
+                        }
+                        board[i][j].firstChild.innerText = letter + 'b'
                     }
-                    strings[i][j].firstChild.innerText = letter + 'b'
                 }
             }
-        }
+        })
     } else {
-        for (let i = 0; i < strings.length; i++) {
-            for (let j = 0; j < strings[i].length; j++) {
-                if (strings[i][j].innerText.length > 1) {
-                    let letter = strings[i][j].innerText[0]
-                    let ascii = letter.charCodeAt(0)
-                    if (letter != 'A') {
-                        letter = String.fromCharCode(ascii - 1)
-                    } else {
-                        letter = 'G'
+        boardsStrings.forEach((strings) => {
+            for (let i = 0; i < strings.length; i++) {
+                for (let j = 0; j < strings[i].length; j++) {
+                    if (strings[i][j].innerText.length > 1) {
+                        let letter = strings[i][j].innerText[0]
+                        let ascii = letter.charCodeAt(0)
+                        if (letter != 'A') {
+                            letter = String.fromCharCode(ascii - 1)
+                        } else {
+                            letter = 'G'
+                        }
+                        strings[i][j].firstChild.innerText = letter + '#'
                     }
-                    strings[i][j].firstChild.innerText = letter + '#'
                 }
             }
-        }
+        })
     }
+
     // update root HERE?
 }
 
@@ -498,7 +510,9 @@ function displayWarning() {
 }
 
 // MAIN
-buildFretboard()
+buildFretboard('board', strings)
+
+buildFretboard('board2', strings2)
 
 function callMeBackBaby(clickedDiv) {
     // clear notes
