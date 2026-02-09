@@ -1,9 +1,5 @@
-:root {
-    --note-opacity: 0;
-}
-
 html {
-    background-color: #191724;
+   background-color: #191724;
     color: #e0def4;
 }
 
@@ -19,15 +15,20 @@ body {
 
 header {
 	display:flex;
+	position: relative;
+	margin-top: 10px;
 
-	/* border:1px solid yellow; */
-
-	align-items: flex-end;
 }
 
 header h1,h3 {
 	margin: 0;
-	padding: 20px;
+}
+
+header h3 {
+	position: absolute;
+	left: 50%;
+	transform: translateX(-50%);
+	place-self: center;
 }
 
 #board, #board2 {
@@ -38,7 +39,7 @@ header h1,h3 {
     flex-direction: column-reverse;
     width: 100%;
     margin-top: 20px;
-    background: #502F26;
+    background:#472924;
 }
 
 .string-row {
@@ -171,15 +172,20 @@ header h1,h3 {
 
 #dash {
 	display:flex;
-	flex-direction: row;
 	align-items: center;
-	font-size:16px;
-	padding: 10px;
+	font-size:20px;
 	touch-action: manipulation;
+}
+
+#dash button {
+	padding: 5px 25px;
+	margin: 5px;
 }
 
 #dash #up,
 #dash #down,
+#dash #up-lat,
+#dash #down-lat,
 #dash #sign-tog,
 #dash #maj,
 #dash #min{
@@ -194,6 +200,8 @@ header h1,h3 {
 
 #dash #up:hover,
 #dash #down:hover,
+#dash #up-lat:hover,
+#dash #down-lat:hover,
 #dash #sign-tog:hover,
 #dash #maj:hover,
 #dash #min:hover,
@@ -201,26 +209,43 @@ header h1,h3 {
 	background-color: #7B344A !important;
 }
 
+#dpad {
+	/* background: green; */
+	display: flex;
+	flex-direction: column;
+	align-items:center;
+}
+
+#dpad button {
+	width: fit-content;
+}
+
 .centerdash {
 	border: none;
 	display: flex;
+	place-items: center;
 }
 
 .centerdash > * {
-	padding: 15px;
-	margin: 10px;
+	margin-right: 4px;
+	margin-left: 4px;
+	padding: 16px;
 }
 
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 
-
-#dash span {
-	display: inline-block;
-	width: 32px;
+  to {
+    opacity: 1;
+  }
 }
 
-.fade-out {
+.select-warn{
+	font-weight: 400;
 	color: pink;
-    transition: opacity 0.2s ease-out;
+	animation: fade-in 0.5s ease-out forwards;
 }
 
 .third-color {
@@ -232,12 +257,31 @@ header h1,h3 {
 }
 
 #triad-info {
-	font-size: 27px;
+	position: absolute;
+	width: 230px;
+	left: 50%;
+	transform: translateX(-50%);
+	place-self: center;
+	font-size: 23px;
 	opacity: 0;
     transition: opacity 0.4s ease;
-	width: 250px;
 }
+
 
 #triad-info.fade-in {
     opacity: 1;
 }
+
+#triad-info i {
+	position: absolute;
+	right: 0;
+}
+
+.arrows {
+	font-size: 18px;
+	font-weight: 200;
+	padding: 0;
+	margin: 0;
+	color:#535F4F;
+}
+

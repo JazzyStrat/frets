@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/aarol/reload"
 )
@@ -12,7 +13,6 @@ func main() {
 	fmt.Println("no time to fret")
 
 	mux := http.NewServeMux()
-
 	fs := http.FileServer(http.Dir("."))
 	mux.Handle("/assets/", fs)
 
@@ -31,7 +31,7 @@ func main() {
 		// Optionally, define a callback to
 		// invalidate any caches
 		reloader.OnReload = func() {
-			fmt.Println("reloaded")
+			fmt.Println(time.Now())
 		}
 
 		// Use the Handle() method as a middleware
