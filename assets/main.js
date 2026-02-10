@@ -74,23 +74,41 @@ function calcTriadType() {
         quality = config.quality
         inversion = config.inversion
 
-        for (let z = 0; z < 3; z++) {
-            if ((z == config.thirdIdx && z) || z == config.fifthIdx) {
-                continue
-            }
-            root = tri[z].innerText
-        }
-
         tri[config.thirdIdx].lastElementChild.classList.toggle('third-color')
         third = tri[config.thirdIdx]
         fifth = tri[config.fifthIdx]
 
         fifth.lastElementChild.classList.toggle('fifth-color')
     } else {
-        console.log('failed to identify triad')
+        console.log('failed to identify triad type')
     }
-    // let charCode = root.charCodeAt(0)
-    // let NextLetter = String.fromCharCode(charCode - 1) // G to F
+
+    // find root index
+    for (let z = 0; z < 3; z++) {
+        if ((z == config.thirdIdx && z) || z == config.fifthIdx) {
+            continue
+        }
+        root = tri[z].innerText
+    }
+    let firstLetter = root.charCodeAt(0) // - 'A'.charCodeAt(0) // 6
+    let secLetter = third.lastElementChild.innerText.charCodeAt(0) // - 'A'.charCodeAt(0) // 1
+
+    // A B C D E F G A B
+
+    console.log(secLetter - firstLetter)
+    const dist = Math.abs(secLetter - firstLetter)
+    console.log(dist)
+
+    if (dist != 2 && dist != 5) {
+        switchSigns()
+        // find root index
+        for (let z = 0; z < 3; z++) {
+            if ((z == config.thirdIdx && z) || z == config.fifthIdx) {
+                continue
+            }
+            root = tri[z].innerText
+        }
+    }
     updateDash()
 }
 
@@ -272,7 +290,6 @@ function initTriad(fd) {
         }
         for (let f = 0; f < LAST_FRET; ++f) {
             if (mainboard[fd.coord[0] + 2][f].abs == thirdPitch) {
-                root = fd.lastElementChild.innerText
                 fifth = mainboard[fd.coord[0] + 2][f] // this is div
 
                 // clear old triad
@@ -294,7 +311,6 @@ function initTriad(fd) {
         })
         tri = []
 
-        root = fd.lastElementChild.innerText
         fifth = mainboard[3][fd.coord[1] - 1]
         third = mainboard[5][fd.coord[1] - 1]
 
@@ -308,7 +324,6 @@ function initTriad(fd) {
         })
         tri = []
 
-        root = fd.lastElementChild.innerText
         fifth = mainboard[4][fd.coord[1]]
         third = mainboard[3][fd.coord[1] + 1]
 
@@ -318,16 +333,9 @@ function initTriad(fd) {
     }
     tri.forEach((d) => {
         d.lastElementChild.classList.toggle('active')
-        calcTriadType()
-        document.getElementById('instructions').style.opacity = 0
     })
-
-    let firstLetter = tri[0].innerText.charCodeAt(0)
-    let secLetter = tri[1].innerText.charCodeAt(0)
-    if ((secLetter % 7) - (firstLetter % 7) != 2) {
-        switchSigns()
-        calcTriadType()
-    }
+    calcTriadType()
+    document.getElementById('instructions').style.opacity = 0
 }
 
 // updated to prioritize vertical invertion over horizontal
@@ -369,7 +377,6 @@ function setTriad(absPitches, offset) {
 }
 
 function updateDash() {
-    // root = fd.lastElementChild.innerText
     triadInfo.innerHTML = `<b>${root} ${quality}</b> <i>${inversion}</i>`
     triadInfo.classList.add('fade-in')
 
@@ -463,7 +470,7 @@ dash.addEventListener('click', () => {
 
 const minor = document.getElementById('min')
 minor.addEventListener('click', (e) => {
-    if (quality != 'min') {
+    if (quality != 'min' && tri.length > 0) {
         let thirdIdx = tri.indexOf(third)
         tri[thirdIdx].lastElementChild.classList.remove('active')
         tri[thirdIdx] = third.previousElementSibling
@@ -476,7 +483,7 @@ minor.addEventListener('click', (e) => {
 
 const major = document.getElementById('maj')
 major.addEventListener('click', (e) => {
-    if (quality != 'maj') {
+    if (quality != 'maj' && tri.length > 0) {
         let thirdIdx = tri.indexOf(third)
         tri[thirdIdx].lastElementChild.classList.remove('active')
         tri[thirdIdx] = third.nextElementSibling
@@ -487,8 +494,10 @@ major.addEventListener('click', (e) => {
     }
 })
 
-const signTog = document.getElementById('sign-tog')
-signTog.addEventListener('click', (e) => {
+function signButtonNameToggle(e) {
+    if (root == undefined) {
+        return
+    }
     if (e.target.innerText.includes('b')) {
         e.target.innerText = 'sharps (#)'
     } else {
@@ -496,7 +505,10 @@ signTog.addEventListener('click', (e) => {
     }
     switchSigns()
     calcTriadType()
-})
+}
+
+const signTog = document.getElementById('sign-tog')
+signTog.addEventListener('click', (e) => signButtonNameToggle(e))
 
 const upButton = document.getElementById('up')
 upButton.addEventListener('click', () => {
