@@ -150,9 +150,14 @@ header h3 {
     background-color: #535F4F;
     box-sizing: border-box;
     opacity: 0;
-    transition: opacity 0.3s ease-out;
+    transition: opacity 0.3s ease-out, width .4s ease-in-out;
 }
 
+.emb.glow {
+	font-size: 1.2em;
+	width: 45px;
+	height: 45px;
+}
 
 @media (hover: hover) {
 .fw:hover .emb {
@@ -163,6 +168,7 @@ header h3 {
 .emb.active {
     opacity: 1;
 }
+
 
 @media (hover: hover) {
 .fw:hover .emb.active {

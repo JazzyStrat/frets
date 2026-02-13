@@ -95,10 +95,7 @@ function calcTriadType() {
 
     // A B C D E F G A B
 
-    console.log(secLetter - firstLetter)
     const dist = Math.abs(secLetter - firstLetter)
-    console.log(dist)
-
     if (dist != 2 && dist != 5) {
         switchSigns()
         // find root index
@@ -134,10 +131,15 @@ const noteMap = new Map([
 
 // return note as letter
 function absToNote(note) {
+    let next = 0
     const noteVal = note % 12 // knock down to map val
     for (let [k, v] of noteMap.entries()) {
+        // if (next) {
+        //     // get flats
+        // }
         if (v == noteVal) {
             return k
+            next = 1
         }
     }
 }
@@ -262,7 +264,7 @@ function buildFretboard(boardId, stringsArr) {
     // single event delegation
     board.addEventListener('click', (e) => {
         const fretDiv = e.target.closest('.fw') || e.target.closest('.nut')
-        if (fretDiv) {
+        if (fretDiv && fretDiv != mainboard[5][LAST_FRET]) {
             if (boardId == 'board') {
                 initTriad(fretDiv)
             } else {
@@ -270,10 +272,6 @@ function buildFretboard(boardId, stringsArr) {
             }
         }
     })
-
-    if (boardId == 'board') {
-        // console.log((board.lastChild.lastChild.classList = ''))
-    }
 }
 
 function initTriad(fd) {
@@ -301,10 +299,14 @@ function initTriad(fd) {
                 tri.push(fd)
                 tri.push(third)
                 tri.push(fifth)
+                console.log('zero')
                 break
             }
         }
     } else if (fd.coord[0] == 4) {
+        if (!mainboard[3][fd.coord[1] - 1] || !mainboard[5][fd.coord[1] - 1]) {
+            return
+        }
         // B string, 2nd inversion
         tri.forEach((div) => {
             div.lastElementChild.classList.remove('active')
@@ -313,10 +315,10 @@ function initTriad(fd) {
 
         fifth = mainboard[3][fd.coord[1] - 1]
         third = mainboard[5][fd.coord[1] - 1]
-
         tri.push(fifth)
         tri.push(fd)
         tri.push(third)
+        console.log('B STR', tri)
     } else {
         // high E string, 1st inversion
         tri.forEach((div) => {
@@ -330,35 +332,40 @@ function initTriad(fd) {
         tri.push(third)
         tri.push(fifth)
         tri.push(fd)
+        console.log('TWo')
     }
-    tri.forEach((d) => {
-        d.lastElementChild.classList.toggle('active')
-    })
-    calcTriadType()
+    if (tri.length === 3) {
+        tri.forEach((d) => {
+            d.lastElementChild.classList.toggle('active')
+        })
+        calcTriadType()
+    }
     document.getElementById('instructions').style.opacity = 0
 }
 
 // updated to prioritize vertical invertion over horizontal
 function setTriad(absPitches, offset) {
+    console.log('tryin to set')
     let newTriad = []
 
-    let i = tri[0].coord[0] + offset
-
-    if (i < 0 || i > 3) {
+    let s = tri[0].coord[0] + offset
+    if (s < 0 || s > 3) {
+        console.log('early return')
+        glow()
         return
     }
 
     for (const pitch of absPitches) {
-        for (let j = 0; j <= LAST_FRET; j++) {
-            if (mainboard[i][j].abs == pitch) {
-                newTriad.push(mainboard[i][j])
-                i++
+        for (let f = 0; f <= LAST_FRET; f++) {
+            if (mainboard[s][f].abs == pitch) {
+                newTriad.push(mainboard[s][f])
+                s++
                 break
             }
         }
     }
     // wonderful, set tri
-    if (newTriad.length == 3) {
+    if (newTriad.length == 3 && !newTriad.includes(undefined)) {
         tri.forEach((d) => {
             d.lastElementChild.classList.remove('active')
         })
@@ -368,11 +375,21 @@ function setTriad(absPitches, offset) {
             div.lastElementChild.classList.add('active')
         })
         calcTriadType()
-        return // get the hell outta here
     } else {
-        // this makes no sense
+        console.log('⚡️')
+        glow()
         newTriad = []
-        i = 0
+    }
+}
+
+function glow() {
+    for (let note of tri) {
+        note.lastElementChild.classList.add('glow')
+        setTimeout(() => {
+            for (let note of tri) {
+                note.lastElementChild.classList.remove('glow')
+            }
+        }, 200)
     }
 }
 
@@ -425,10 +442,13 @@ function invertTriadUp(lat = false) {
         freqs.push(div.abs)
     })
 
-    if (freqs[0] + 12 > 24 + LAST_FRET) {
-        return
-    }
+    // if (freqs[0] + 12 > 24 + LAST_FRET) {
+    //     glow()
+    //     return
+    // }
+
     let lp = freqs[0] // low pitch
+
     freqs[0] = freqs[1]
     freqs[1] = freqs[2]
     freqs[2] = lp + 12
@@ -446,9 +466,12 @@ function invertTriadDown(lat = false) {
     tri.forEach((div) => {
         freqs.push(div.abs)
     })
-    if (freqs[2] - 12 < 0) {
-        return
-    }
+
+    // if (freqs[2] - 12 < 0) {
+    //     glow()
+    //     return
+    // }
+
     let hp = freqs[2] // high pitch
     freqs[2] = freqs[1]
     freqs[1] = freqs[0]
@@ -469,7 +492,7 @@ dash.addEventListener('click', () => {
 })
 
 const minor = document.getElementById('min')
-minor.addEventListener('click', (e) => {
+minor.addEventListener('click', () => {
     if (quality != 'min' && tri.length > 0) {
         let thirdIdx = tri.indexOf(third)
         tri[thirdIdx].lastElementChild.classList.remove('active')
@@ -482,7 +505,7 @@ minor.addEventListener('click', (e) => {
 })
 
 const major = document.getElementById('maj')
-major.addEventListener('click', (e) => {
+major.addEventListener('click', () => {
     if (quality != 'maj' && tri.length > 0) {
         let thirdIdx = tri.indexOf(third)
         tri[thirdIdx].lastElementChild.classList.remove('active')
