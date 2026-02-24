@@ -94,7 +94,6 @@ function calcTriadType() {
     let secLetter = third.lastElementChild.innerText.charCodeAt(0) // - 'A'.charCodeAt(0) // 1
 
     // A B C D E F G A B
-
     const dist = Math.abs(secLetter - firstLetter)
     if (dist != 2 && dist != 5) {
         switchSigns()
