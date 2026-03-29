@@ -8,7 +8,7 @@
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
-            href="https://fonts.googleapis.com/css2?family=Rubik:ital,wght@0,300..900;1,300..900&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap"
             rel="stylesheet"
         />
     </head>
@@ -23,7 +23,12 @@
         <div id="board"></div>
         <div id="dash">
             <div class="centerdash">
-                <h3 class="arrows">keyboard arrows (↑↓←→ or hjkl)</h3>
+                <div id="color-key">
+                    <div class="emb">Root</div>
+                    <div class="emb third-color">3rd</div>
+                    <div class="emb fifth-color">5th</div>
+                </div>
+                <h3 class="arrow-keys">keyboard arrows (↑↓←→ or hjkl)</h3>
                 <div id="dpad">
                     <button id="up">↑</button>
                     <div id="padmiddle">
@@ -33,12 +38,18 @@
                     <button id="down">↓</button>
                 </div>
             </div>
-            <button id="min">Minor</button>
-            <button id="maj">Major</button>
-            <button id="sign-tog">flats (b)</button>
+            <div id="buttons">
+                <button id="min">min</button>
+                <button id="maj">maj</button>
+                <button id="dim">dim</button>
+                <button id="aug">aug</button>
+                <button id="sign-tog">♭</button>
+            </div>
         </div>
+
         <h3>Free Range Board</h3>
         <div id="board2"></div>
-        <script src="assets/main.js"></script>
+        <script type="module" src="assets/main.js"></script>
+        <script type="module" src="assets/maps.js"></script>
     </body>
 </html>

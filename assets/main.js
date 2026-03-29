@@ -1,159 +1,126 @@
-let LAST_FRET = 15
+import { triadMap, noteMap } from './maps.js'
 
-let mainboard = []
-let freeboard = []
+const LAST_FRET = 15
 
-let boards = [mainboard, freeboard]
+const mainboard = []
+const freeboard = []
+
+const boards = [mainboard, freeboard]
 
 // for main board
 let tri = []
 
+let root
+// todo: figure out if getting rid of these makes sense
 let third
 let fifth
 
 // dashboard
-let root // just note letter as string
-let quality
+let rootAlpha // just note letter as string
+let quality // maj, min, dim -- TODO: aug
 let inversion
 
-const triadInfo = document.getElementById('triad-info')
+let triadInfo = document.getElementById('triad-info')
 
-const dash = document.getElementById('dash')
-
-function calcTriadType() {
-    const firstInt = tri[1].abs - tri[0].abs
-    const secInt = tri[2].abs - tri[1].abs
-    const intervals = `${firstInt},${secInt}`
-
-    const triadConfigs = {
-        '4,3': {
-            quality: 'maj',
-            inversion: 'root position',
-            thirdIdx: 1,
-            fifthIdx: 2,
-        },
-        '3,5': {
-            quality: 'maj',
-            inversion: '1st inversion',
-            thirdIdx: 0,
-            fifthIdx: 1,
-        },
-        '5,4': {
-            quality: 'maj',
-            inversion: '2nd inversion',
-            thirdIdx: 2,
-            fifthIdx: 0,
-        },
-        '3,4': {
-            quality: 'min',
-            inversion: 'root position',
-            thirdIdx: 1,
-            fifthIdx: 2,
-        },
-        '4,5': {
-            quality: 'min',
-            inversion: '1st inversion',
-            thirdIdx: 0,
-            fifthIdx: 1,
-        },
-        '5,3': {
-            quality: 'min',
-            inversion: '2nd inversion',
-            thirdIdx: 2,
-            fifthIdx: 0,
-        },
+function clearTri() {
+    if (tri[0] == null) {
+        return
     }
-
-    const config = triadConfigs[intervals]
-    if (config) {
-        tri.forEach((note) => {
-            note.lastElementChild.classList.remove('third-color')
-            note.lastElementChild.classList.remove('fifth-color')
-        })
-
-        quality = config.quality
-        inversion = config.inversion
-
-        tri[config.thirdIdx].lastElementChild.classList.toggle('third-color')
-        third = tri[config.thirdIdx]
-        fifth = tri[config.fifthIdx]
-
-        fifth.lastElementChild.classList.toggle('fifth-color')
-    } else {
-        console.log('failed to identify triad type')
-    }
-
-    // find root index
-    for (let z = 0; z < 3; z++) {
-        if ((z == config.thirdIdx && z) || z == config.fifthIdx) {
-            continue
-        }
-        root = tri[z].innerText
-    }
-    let firstLetter = root.charCodeAt(0) // - 'A'.charCodeAt(0) // 6
-    let secLetter = third.lastElementChild.innerText.charCodeAt(0) // - 'A'.charCodeAt(0) // 1
-
-    // A B C D E F G A B
-    const dist = Math.abs(secLetter - firstLetter)
-    if (dist != 2 && dist != 5) {
-        switchSigns()
-        // find root index
-        for (let z = 0; z < 3; z++) {
-            if ((z == config.thirdIdx && z) || z == config.fifthIdx) {
-                continue
-            }
-            root = tri[z].innerText
-        }
-    }
-    updateDash()
+    tri.forEach((div) => {
+        div.lastElementChild.classList.remove('active')
+        div.lastElementChild.classList.remove('third-color')
+        div.lastElementChild.classList.remove('fifth-color')
+    })
+    tri = []
 }
 
-const noteMap = new Map([
-    ['A', 5], // #
-    ['A#', 6],
-    ['Bb', 6],
-    ['B', 7], // #
-    ['C', 8],
-    ['C#', 9],
-    ['Db', 9],
-    ['D', 10], //
-    ['D#', 11],
-    ['Eb', 11],
-    ['E', 0], // #
-    ['F', 1], // b
-    ['F#', 2],
-    ['Gb', 2],
-    ['G', 3], // #
-    ['G#', 4],
-    ['Ab', 4],
-])
+// identifies triad by hitting up the map
+function calcTriadType() {
+    const firstInterval = tri[1].abs - tri[0].abs
+    const secInterval = tri[2].abs - tri[1].abs
+    const intervals = `${firstInterval},${secInterval}`
+    // console.log(intervals)
+    const desc = triadMap[intervals]
+    if (desc == null) {
+        alert('rutro, unidentifiable triad')
+        return null
+    }
+
+    quality = desc.quality
+    inversion = desc.inversion
+    // find root index, set rootAlpha and root
+    for (let z = 0; z < 3; z++) {
+        if (z != desc.thirdIdx && z != desc.fifthIdx) {
+            rootAlpha = tri[z].innerText
+            root = tri[z]
+            break
+        }
+    }
+
+    third = tri[desc.thirdIdx]
+    fifth = tri[desc.fifthIdx]
+
+    if (quality == 'aug') {
+        // COMING SOON
+        // rootAlpha += ` or ${tri[desc.thirdIdx].innerText} or ${fifth.innerText}`
+    }
+    third.lastElementChild.classList.add('third-color')
+    fifth.lastElementChild.classList.add('fifth-color')
+
+    tri.forEach((div) => {
+        div.lastElementChild.classList.add('active')
+    })
+
+    alphaCheck(desc)
+    updateDash()
+    return desc
+}
+
+function alphaCheck(desc) {
+    let rootAscii = root.innerText.charCodeAt(0)
+    let thirdAscii = third.lastElementChild.innerText.charCodeAt(0)
+    let fifthAscii = fifth.lastElementChild.innerText.charCodeAt(0)
+    // console.log('A Team:', rootAscii, thirdAscii, fifthAscii)
+    const distOne = Math.abs(thirdAscii - rootAscii)
+    const distTwo = Math.abs(fifthAscii - thirdAscii)
+
+    // ensure correct alpha spelling
+    // alpha dist of either 2 or 5 covers thirds, sixths, or thirds wrapped
+    // A B C D E F G A                     // this breaks f dim alphas
+    if ((distOne != 2 && distOne != 5) || (distTwo != 2 && distTwo != 5)) {
+        switchSigns()
+        for (let z = 0; z < 3; z++) {
+            if (z != desc.thirdIdx && z != desc.fifthIdx) {
+                rootAlpha = tri[z].innerText
+                break
+            }
+        }
+    }
+}
 
 // return note as letter
 function absToNote(note) {
-    let next = 0
     const noteVal = note % 12 // knock down to map val
     for (let [k, v] of noteMap.entries()) {
-        // if (next) {
-        //     // get flats
-        // }
         if (v == noteVal) {
             return k
-            next = 1
         }
     }
 }
 
-// Equal temperament — normalized distance from nutZero to fret n:
+// distance from nutZero to fret n
 function TwelfthRoot(n) {
     return 1 - Math.pow(2, -n / 12)
 }
 
-function buildFretboard(boardId, stringsArr) {
-    const board = document.getElementById(boardId)
+// params: board css ID, empty ref array
+function buildFretboard(boardID, stringsArr) {
+    const board = document.getElementById(boardID)
 
     // calc fret widths
     const fretWidths = []
-    const visible = TwelfthRoot(LAST_FRET)
+    const visible = TwelfthRoot(LAST_FRET) // ~0.579
+
     let prev = 0
     for (let n = 1; n <= LAST_FRET; n++) {
         const d = TwelfthRoot(n)
@@ -163,7 +130,7 @@ function buildFretboard(boardId, stringsArr) {
     }
 
     let abs = 0 // discrete absolute pitch vals (0 == Open Lo E)
-    const stringGauges = [0.046, 0.036, 0.026, 0.017, 0.013, 0.01] // EXL110 in inches
+    const stringGauges = [0.046, 0.036, 0.026, 0.017, 0.013, 0.01] // EXL110
     for (let s = 0; s <= 5; s++) {
         // set string widths
         const row = document.createElement('div')
@@ -185,10 +152,9 @@ function buildFretboard(boardId, stringsArr) {
             abs = abs + 5
         }
 
-        // bundle up baby, loosey goosey javascript
+        // bundle up baby, loosey goosey javascript nutZero.abs = abs
         nutZero.abs = abs
         nutZero.coord = [s, 0] // [string, fret]
-
         string.push(nutZero)
         row.appendChild(nutZero)
 
@@ -254,7 +220,6 @@ function buildFretboard(boardId, stringsArr) {
         string.forEach((note) => {
             const noteText = document.createElement('p')
             noteText.classList.add('emb')
-
             noteText.innerText = absToNote(note.abs)
             note.appendChild(noteText)
         })
@@ -263,8 +228,9 @@ function buildFretboard(boardId, stringsArr) {
     // single event delegation
     board.addEventListener('click', (e) => {
         const fretDiv = e.target.closest('.fw') || e.target.closest('.nut')
+        // exclude highest note on fretboard
         if (fretDiv && fretDiv != mainboard[5][LAST_FRET]) {
-            if (boardId == 'board') {
+            if (boardID == 'board') {
                 initTriad(fretDiv)
             } else {
                 fretDiv.lastElementChild.classList.toggle('active')
@@ -272,84 +238,66 @@ function buildFretboard(boardId, stringsArr) {
         }
     })
 }
-
+// lay as major triad
 function initTriad(fd) {
-    // if two higher strings exist, try placing 0th pos maj triad
+    clearTri()
+    // E A D G strings
     if (fd.coord[0] < mainboard.length - 2) {
         // 0th inversion
         const secondPitch = fd.abs + 4
         const thirdPitch = fd.abs + 7
+        // proceedurally match
         for (let f = 0; f <= LAST_FRET; ++f) {
             if (mainboard[fd.coord[0] + 1][f].abs == secondPitch) {
                 third = mainboard[fd.coord[0] + 1][f] // this is div
                 break
             }
         }
+
         for (let f = 0; f < LAST_FRET; ++f) {
             if (mainboard[fd.coord[0] + 2][f].abs == thirdPitch) {
                 fifth = mainboard[fd.coord[0] + 2][f] // this is div
-
-                // clear old triad
-                tri.forEach((div) => {
-                    div.lastElementChild.classList.remove('active')
-                })
-                tri = []
-
                 tri.push(fd)
                 tri.push(third)
                 tri.push(fifth)
-                console.log('zero')
                 break
             }
         }
+        // B string
     } else if (fd.coord[0] == 4) {
+        // |E---------
+        // |B---------
+        // |G---------
         if (!mainboard[3][fd.coord[1] - 1] || !mainboard[5][fd.coord[1] - 1]) {
             return
         }
-        // B string, 2nd inversion
-        tri.forEach((div) => {
-            div.lastElementChild.classList.remove('active')
-        })
-        tri = []
-
         fifth = mainboard[3][fd.coord[1] - 1]
         third = mainboard[5][fd.coord[1] - 1]
+
         tri.push(fifth)
         tri.push(fd)
         tri.push(third)
-        console.log('B STR', tri)
-    } else {
         // high E string, 1st inversion
-        tri.forEach((div) => {
-            div.lastElementChild.classList.remove('active')
-        })
-        tri = []
-
+    } else {
         fifth = mainboard[4][fd.coord[1]]
         third = mainboard[3][fd.coord[1] + 1]
 
         tri.push(third)
         tri.push(fifth)
         tri.push(fd)
-        console.log('TWo')
     }
-    if (tri.length === 3) {
-        tri.forEach((d) => {
-            d.lastElementChild.classList.toggle('active')
-        })
-        calcTriadType()
-    }
+
+    calcTriadType()
     document.getElementById('instructions').style.opacity = 0
 }
 
-// updated to prioritize vertical invertion over horizontal
-function setTriad(absPitches, offset) {
-    console.log('tryin to set')
+// sets triad given raw absolute pitch array and string offset
+// from current triad's lowest string
+function shiftTriad(absPitches, offset) {
     let newTriad = []
+    let s = tri[0].coord[0] + offset // starting string = current + 0/1/-1
 
-    let s = tri[0].coord[0] + offset
     if (s < 0 || s > 3) {
-        console.log('early return')
         glow()
         return
     }
@@ -363,21 +311,14 @@ function setTriad(absPitches, offset) {
             }
         }
     }
-    // wonderful, set tri
+
     if (newTriad.length == 3 && !newTriad.includes(undefined)) {
-        tri.forEach((d) => {
-            d.lastElementChild.classList.remove('active')
-        })
-        tri = []
+        clearTri()
         tri = newTriad
-        tri.forEach((div) => {
-            div.lastElementChild.classList.add('active')
-        })
         calcTriadType()
     } else {
-        console.log('⚡️')
+        console.log('⚡️ unshiftable')
         glow()
-        newTriad = []
     }
 }
 
@@ -392,41 +333,33 @@ function glow() {
     }
 }
 
-function updateDash() {
-    triadInfo.innerHTML = `<b>${root} ${quality}</b> <i>${inversion}</i>`
-    triadInfo.classList.add('fade-in')
-
-    if (quality === 'maj') {
-        major.classList.add('active')
-        minor.classList.remove('active')
-    } else {
-        minor.classList.add('active')
-        major.classList.remove('active')
-    }
-}
-
+//TODO: handle F dim (F - Ab - Cb)
 function switchSigns() {
     let sharps = mainboard[0][2].innerText.includes('#')
+
     boards.forEach((board) => {
-        for (let i = 0; i < board.length; i++) {
-            for (let j = 0; j < board[i].length; j++) {
-                if (board[i][j].innerText.length > 1) {
-                    let letter = board[i][j].innerText[0]
+        for (let s = 0; s < board.length; s++) {
+            for (let j = 0; j < board[s].length; j++) {
+                let letter = board[s][j].innerText[0] // get lone letter
+                if (letter == 'B' && rootAlpha == 'F' && quality == 'dim') {
+                    board[s][j].lastChild.innerText = 'Cb'
+                }
+                if (board[s][j].innerText.length > 1) {
                     let ascii = letter.charCodeAt(0)
                     if (sharps) {
                         if (letter != 'G') {
-                            letter = String.fromCharCode(ascii + 1)
+                            letter = String.fromCharCode(ascii + 1) // next letter
                         } else {
                             letter = 'A'
                         }
-                        board[i][j].firstChild.innerText = letter + 'b'
+                        board[s][j].lastChild.innerText = letter + 'b' // ♭
                     } else {
                         if (letter != 'A') {
-                            letter = String.fromCharCode(ascii - 1)
+                            letter = String.fromCharCode(ascii - 1) // prev letter
                         } else {
                             letter = 'G'
                         }
-                        board[i][j].firstChild.innerText = letter + '#'
+                        board[s][j].lastChild.innerText = letter + '#'
                     }
                 }
             }
@@ -441,23 +374,16 @@ function invertTriadUp(lat = false) {
         freqs.push(div.abs)
     })
 
-    // if (freqs[0] + 12 > 24 + LAST_FRET) {
-    //     glow()
-    //     return
-    // }
-
     let lp = freqs[0] // low pitch
-
     freqs[0] = freqs[1]
     freqs[1] = freqs[2]
     freqs[2] = lp + 12
 
     if (lat) {
-        setTriad(freqs, 0)
+        shiftTriad(freqs, 0)
         return
     }
-
-    setTriad(freqs, 1)
+    shiftTriad(freqs, 1)
 }
 
 function invertTriadDown(lat = false) {
@@ -466,71 +392,153 @@ function invertTriadDown(lat = false) {
         freqs.push(div.abs)
     })
 
-    // if (freqs[2] - 12 < 0) {
-    //     glow()
-    //     return
-    // }
-
     let hp = freqs[2] // high pitch
     freqs[2] = freqs[1]
     freqs[1] = freqs[0]
     freqs[0] = hp - 12
 
     if (lat) {
-        setTriad(freqs, 0)
+        shiftTriad(freqs, 0)
         return
     }
-
-    setTriad(freqs, -1)
+    shiftTriad(freqs, -1)
 }
 
-dash.addEventListener('click', () => {
+let dash = document.getElementById('dash')
+const minBtn = document.getElementById('min')
+const majBtn = document.getElementById('maj')
+const dimBtn = document.getElementById('dim')
+const augBtn = document.getElementById('aug')
+
+const buttons = document.getElementById('buttons')
+// delegate button click actions
+buttons.addEventListener('click', (e) => {
     if (tri.length < 1) {
         displayWarning()
-    }
-})
-
-const minor = document.getElementById('min')
-minor.addEventListener('click', () => {
-    if (quality != 'min' && tri.length > 0) {
-        let thirdIdx = tri.indexOf(third)
-        tri[thirdIdx].lastElementChild.classList.remove('active')
-        tri[thirdIdx] = third.previousElementSibling
-
-        tri[thirdIdx].lastElementChild.classList.add('active')
-
-        calcTriadType()
-    }
-})
-
-const major = document.getElementById('maj')
-major.addEventListener('click', () => {
-    if (quality != 'maj' && tri.length > 0) {
-        let thirdIdx = tri.indexOf(third)
-        tri[thirdIdx].lastElementChild.classList.remove('active')
-        tri[thirdIdx] = third.nextElementSibling
-
-        tri[thirdIdx].lastElementChild.classList.add('active')
-
-        calcTriadType()
-    }
-})
-
-function signButtonNameToggle(e) {
-    if (root == undefined) {
         return
     }
-    if (e.target.innerText.includes('b')) {
-        e.target.innerText = 'sharps (#)'
+    const buttID = e.target.id
+    if (buttID == 'sign-tog') {
+        signButtonNameToggle(e)
+        return
+    }
+    const thirdIdx = tri.indexOf(third)
+    const fifthIdx = tri.indexOf(fifth)
+
+    // TRIAD SHIFTING, remove visibility before refs change
+    tri[thirdIdx].lastElementChild.classList.remove('active')
+    tri[thirdIdx].lastElementChild.classList.remove('third-color')
+    tri[fifthIdx].lastElementChild.classList.remove('active')
+    tri[fifthIdx].lastElementChild.classList.remove('fifth-color')
+
+    switch (buttID) {
+        case quality: {
+            glow()
+            break
+        }
+        case 'maj': {
+            if (quality == 'min') {
+                tri[thirdIdx] = third.nextElementSibling
+            } else if (quality == 'dim') {
+                tri[thirdIdx] = third.nextElementSibling
+                tri[fifthIdx] = fifth.nextElementSibling
+            } else {
+                tri[fifthIdx] = fifth.previousElementSibling
+            }
+            break
+        }
+        case 'min': {
+            if (quality == 'maj') {
+                tri[thirdIdx] = third.previousElementSibling
+            } else if (quality == 'dim') {
+                tri[fifthIdx] = fifth.nextElementSibling
+            } else {
+                tri[thirdIdx] = third.previousElementSibling
+                tri[fifthIdx] = fifth.previousElementSibling
+            }
+            break
+        }
+        case 'dim': {
+            calcDimTriad(thirdIdx, fifthIdx)
+            break
+        }
+        case 'aug': {
+            calcAug(thirdIdx, fifthIdx)
+        }
+    }
+    calcTriadType()
+})
+
+function calcAug(thirdIdx, fifthIdx) {
+    if (quality == 'maj') tri[fifthIdx] = fifth.nextElementSibling
+    else if (quality == 'min') {
+        tri[fifthIdx] = fifth.nextElementSibling
+        tri[thirdIdx] = tri[thirdIdx].nextElementSibling
     } else {
-        e.target.innerText = 'flats (b)'
+        tri[fifthIdx] = fifth.nextElementSibling.nextElementSibling
+        tri[thirdIdx] = tri[thirdIdx].nextElementSibling
+    }
+}
+
+function calcDimTriad(thirdIdx, fifthIdx) {
+    // tri[fifthIdx].lastElementChild.classList.remove('active')
+    // tri[fifthIdx].lastElementChild.classList.remove('fifth-color')
+    // alert(qual)
+    if (quality == 'maj') {
+        tri[thirdIdx] = third.previousElementSibling
+        tri[fifthIdx] = fifth.previousElementSibling
+    } else if (quality == 'aug') {
+        tri[fifthIdx] = fifth.previousElementSibling.previousElementSibling
+        tri[thirdIdx] = tri[thirdIdx].previousElementSibling
+    } else {
+        // GUITAR!
+        tri[fifthIdx] = fifth.previousElementSibling
+    }
+
+    tri[thirdIdx].lastElementChild.classList.add('active')
+    tri[thirdIdx].lastElementChild.classList.add('third-color')
+
+    tri[fifthIdx].lastElementChild.classList.add('active')
+    tri[fifthIdx].lastElementChild.classList.add('fifth-color')
+}
+
+function signButtonNameToggle(e) {
+    if (rootAlpha == undefined) {
+        return
+    }
+    if (e.target.innerText.includes('♭')) {
+        e.target.innerText = '♯'
+    } else {
+        e.target.innerText = '♭'
     }
     switchSigns()
     calcTriadType()
 }
 
-const signTog = document.getElementById('sign-tog')
-signTog.addEventListener('click', (e) => signButtonNameToggle(e))
+const qualityBtnz = [minBtn, majBtn, dimBtn, augBtn]
+
+function updateDash() {
+    triadInfo.innerHTML = `<b>${rootAlpha} ${quality}</b> <i>${inversion}</i>`
+    triadInfo.classList.add('fade-in')
+
+    for (let s of qualityBtnz) {
+        s.classList.remove('active')
+    }
+
+    switch (quality) {
+        case 'maj':
+            majBtn.classList.add('active')
+            break
+        case 'min':
+            minBtn.classList.add('active')
+            break
+        case 'dim':
+            dimBtn.classList.add('active')
+            break
+        case 'aug':
+            augBtn.classList.add('active')
+    }
+}
 
 const upButton = document.getElementById('up')
 upButton.addEventListener('click', () => {
@@ -596,6 +604,6 @@ function displayWarning() {
         }, 2000)
     }
 }
-// MAIN
+
 buildFretboard('board', mainboard)
 buildFretboard('board2', freeboard)
