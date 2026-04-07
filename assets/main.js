@@ -1,4 +1,4 @@
-import { triadMap, noteMap } from './maps.js'
+import { triadMap, noteMapFlats, noteMapSharps } from './maps.js'
 
 const LAST_FRET = 15
 
@@ -77,7 +77,8 @@ function alphaCheck(desc) {
     // alpha dist of either 2 or 5 covers thirds, sixths, or thirds wrapped
     // A B C D E F G A                     // this breaks f dim alphas
     if ((distOne != 2 && distOne != 5) || (distTwo != 2 && distTwo != 5)) {
-        switchSigns()
+        switchSignsRedux()
+        // switchSigns()
         for (let z = 0; z < 3; z++) {
             if (z != desc.thirdIdx && z != desc.fifthIdx) {
                 rootAlpha = tri[z].innerText
@@ -113,13 +114,20 @@ function restoreStyle() {
 }
 
 // return note as letter
-function absToNote(note) {
+function absToNote(note, flats) {
     const noteVal = note % 12 // knock down to map val
-    for (let [k, v] of noteMap.entries()) {
-        if (v == noteVal) {
-            return k
+    if (flats) {
+        for (let [k, v] of noteMapSharps) {
+            if (k == noteVal) {
+                return v
+            }
         }
-    }
+    } else
+        for (let [k, v] of noteMapFlats) {
+            if (k == noteVal) {
+                return v
+            }
+        }
 }
 
 // distance from nutZero to fret n
@@ -234,7 +242,7 @@ function buildFretboard(boardID, stringsArr) {
         string.forEach((note) => {
             const noteText = document.createElement('p')
             noteText.classList.add('emb')
-            noteText.innerText = absToNote(note.abs)
+            noteText.innerText = absToNote(note.abs, false)
             note.appendChild(noteText)
         })
     })
@@ -342,45 +350,27 @@ function shiftTriad(absPitches, offset) {
 function glow() {
     for (let note of tri) {
         note.lastElementChild.classList.add('glow')
-        setTimeout(() => {
-            for (let note of tri) {
-                note.lastElementChild.classList.remove('glow')
-            }
-        }, 200)
+        // race condition?
     }
+    setTimeout(() => {
+        for (let note of tri) {
+            note.lastElementChild.classList.remove('glow')
+        }
+    }, 200) // is that enough, marvin
 }
 
-function switchSigns() {
-    let sharps = mainboard[0][2].innerText.includes('#')
-    boards.forEach((board) => {
-        for (let s = 0; s < board.length; s++) {
-            for (let f = 0; f < board[s].length; f++) {
-                let letter = board[s][f].innerText[0] // get lone letter
-                if (letter == 'B' && rootAlpha == 'F' && quality == 'dim') {
-                    board[s][f].lastChild.innerText = 'Cb'
-                }
-                if (board[s][f].innerText.length > 1) {
-                    let ascii = letter.charCodeAt(0)
-                    if (sharps) {
-                        if (letter != 'G') {
-                            letter = String.fromCharCode(ascii + 1) // next letter
-                        } else {
-                            letter = 'A'
-                        }
-                        board[s][f].lastChild.innerText = letter + 'b' // ♭
-                    } else {
-                        if (letter != 'A') {
-                            letter = String.fromCharCode(ascii - 1) // prev letter
-                        } else {
-                            letter = 'G'
-                        }
-                        board[s][f].lastChild.innerText = letter + '#'
-                    }
+function switchSignsRedux() {
+    let flats = mainboard[0][2].innerText.includes('b')
+    boards.forEach((b) => {
+        for (let s = 0; s < b.length; s++) {
+            for (let f = 0; f < b[s].length; f++) {
+                let l = b[s][f]
+                if (l.innerText.length > 1) {
+                    l.lastChild.innerText = absToNote(l.abs, flats)
                 }
             }
         }
     })
-    updateName()
 }
 
 function invertTriadUp(lat = false) {

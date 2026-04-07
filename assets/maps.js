@@ -39,9 +39,7 @@ export const triadMap = {
         quality: 'dim',
         inversion: 'root position',
         thirdIdx: 1,
-        fifthIdx: 2, // why does 1 break lead to null desc?
-        // answer: because it forms a chord with unkeyable interval string
-        // duh
+        fifthIdx: 2,
     },
     '3,6': {
         quality: 'dim',
@@ -57,7 +55,7 @@ export const triadMap = {
     },
     '4,4': {
         quality: 'aug',
-        inversion: '',
+        inversion: '', // none
         thirdIdx: 1,
         fifthIdx: 2,
     },
@@ -81,4 +79,34 @@ export const noteMap = new Map([
     ['G', 3], // #
     ['G#', 4],
     ['Ab', 4],
+])
+
+export const noteMapFlats = new Map([
+    [0, 'E'],
+    [1, 'F'],
+    [2, 'Gb'],
+    [3, 'G'],
+    [4, 'Ab'],
+    [5, 'A'],
+    [6, 'Bb'],
+    [7, 'B'],
+    [8, 'C'],
+    [9, 'Db'],
+    [10, 'D'],
+    [11, 'Eb'],
+])
+
+export const noteMapSharps = new Map([
+    [0, 'E'],
+    [1, 'F'],
+    [2, 'F#'],
+    [3, 'G'],
+    [4, 'G#'],
+    [5, 'A'],
+    [6, 'A#'],
+    [7, 'B'],
+    [8, 'C'],
+    [9, 'C#'],
+    [10, 'D'],
+    [11, 'D#'],
 ])

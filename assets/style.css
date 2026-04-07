@@ -21,6 +21,10 @@ header {
 
 }
 
+h1 {
+	font-size: 1.5em;
+}
+
 header h1,h3 {
 	margin: 0;
 }
@@ -90,6 +94,7 @@ header h3 {
 }
 
 .nut {
+    font-size: 14px;
     width: 16px; /* prevent fretboard corruption */
     display: flex;
     position: absolute;
@@ -109,7 +114,7 @@ header h3 {
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    border-right: 4px solid #888;
+    border-right: 4px solid #888; /* it's a fret */
     box-sizing: border-box;
     position: relative;
     overflow: visible;
@@ -119,6 +124,7 @@ header h3 {
 
 
 #fret-nums {
+    color: #888;
     display: flex;
     box-sizing: border-box;
     position: relative;
@@ -129,7 +135,6 @@ header h3 {
     font-size: 14px;
     display: flex;
     justify-content: end;
-    color: #888;
     pointer-events: none;
 
     /* width: auto; */
