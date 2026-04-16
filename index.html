@@ -5,12 +5,14 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>frets</title>
         <link rel="stylesheet" href="assets/style.css" />
+
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
             href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap"
             rel="stylesheet"
         />
+
         <link
             rel="icon"
             href="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%20100%20100'%3E%3Crect%20width%3D'100'%20height%3D'100'%20fill%3D'none'%2F%3E%3Ctext%20y%3D'.9em'%20font-size%3D'90'%3E%F0%9F%8E%B8%3C%2Ftext%3E%3C%2Fsvg%3E"
@@ -20,8 +22,7 @@
     <body>
         <header>
             <h1>Brettboard Logic</h1>
-            <h3 id="instructions">Pick a Root Note on the fretboard</h3>
-            <div id="triad-info"></div>
+			<div id="triad-info"><p></p><p>Pick a Root Note on the fretboard</p><p></p>
         </header>
 
         <div id="board"></div>
@@ -45,6 +46,7 @@
             <div id="buttons">
                 <button id="min">min</button>
                 <button id="maj">maj</button>
+                <button id="key-mode">key</button>
                 <button id="dim">dim</button>
                 <button id="aug">aug</button>
                 <button id="sign-tog">♭</button>
