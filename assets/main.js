@@ -9,13 +9,13 @@ const LAST_FRET = 15
 
 const mainboard = []
 const freeboard = []
-
 const boards = [mainboard, freeboard]
+
 // for main board
 let tri = []
 
 let root
-// todo: figure out if getting rid of these makes sense
+// TODO: figure out if getting rid of these makes sense
 // makes sense if you're ok having multiple local variables for them
 let third
 let fifth
@@ -47,10 +47,6 @@ function calcTriadType() {
     quality = desc.quality
     inversion = desc.inversion
 
-    // if (quality != 'maj' && keyMode) {
-    //     toggleKeyMode()
-    // }
-    // find root index, set rootAlpha and root
     for (let z = 0; z < 3; z++) {
         if (z != desc.thirdIdx && z != desc.fifthIdx) {
             rootAlpha = tri[z].innerText
@@ -84,13 +80,13 @@ function alphaCheck(desc) {
     let thirdAscii = third.lastElementChild.innerText.charCodeAt(0)
     let fifthAscii = fifth.lastElementChild.innerText.charCodeAt(0)
 
-    const distOne = Math.abs(thirdAscii - rootAscii)
-    const distTwo = Math.abs(fifthAscii - thirdAscii)
+    const distOne = thirdAscii - rootAscii
+    const distTwo = fifthAscii - thirdAscii
 
     // ensure correct alpha spelling
-    // alpha dist of either 2 or 5 covers thirds, sixths, or thirds wrapped
-    // A B C D E F G A                     // this breaks f dim alphas
-    if ((distOne != 2 && distOne != 5) || (distTwo != 2 && distTwo != 5)) {
+    // alpha dist of either 2 or -5 covers thirds, sixths, or thirds wrapped
+    // A B C D E F G A                     TODO: fix for F dim alphas
+    if ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5)) {
         switchSignsRedux()
         for (let z = 0; z < 3; z++) {
             if (z != desc.thirdIdx && z != desc.fifthIdx) {
@@ -98,6 +94,12 @@ function alphaCheck(desc) {
                 break
             }
         }
+    }
+    let switchable = validSwitchableKey()
+    if (switchable) {
+        signTog.classList.remove('inactive')
+    } else {
+        signTog.classList.add('inactive')
     }
 }
 
@@ -116,7 +118,7 @@ function clearTri() {
     clearStyle()
     tri = []
 }
-
+// -|-|-|-
 function restoreStyle() {
     tri.forEach((div) => {
         div.lastElementChild.classList.add('active')
@@ -304,6 +306,7 @@ function initTriad(fd) {
         // |E---------
         // |B---------
         // |G---------
+        // unlayable chord
         if (!mainboard[3][fd.coord[1] - 1] || !mainboard[5][fd.coord[1] - 1]) {
             return
         }
@@ -379,6 +382,11 @@ function glow() {
 
 function switchSignsRedux() {
     let flats = mainboard[0][2].innerText.includes('b')
+    if (flats) {
+        signTog.innerText = '♭'
+    } else {
+        signTog.innerText = '♯'
+    }
     boards.forEach((b) => {
         for (let s = 0; s < b.length; s++) {
             for (let f = 0; f < b[s].length; f++) {
@@ -406,7 +414,7 @@ function invertTriadUp(lat = false) {
         }
 
         let nextQuality = diatonicWheel[wheelIdx].q
-        let nextIntervals
+        let nextIntervals = ''
         // backwards map key lookup
         for (let [k, v] of triadMap) {
             // inversion type the same for lateral changes
@@ -416,6 +424,7 @@ function invertTriadUp(lat = false) {
             }
         }
         if (nextIntervals == null) {
+            wheelIdx--
             glow()
             return
         }
@@ -451,7 +460,6 @@ function invertTriadUp(lat = false) {
                 break
             }
         }
-        // only works for root position shifts right now
     } else {
         // same triad, inverted up
         let lp = freqs[0] // low pitch
@@ -463,7 +471,6 @@ function invertTriadUp(lat = false) {
     if (lat) {
         let ok = shiftTriad(freqs, 0)
         if (!ok) {
-            // alert('breka on thru up')
             wheelIdx--
         }
         return
@@ -493,6 +500,7 @@ function invertTriadDown(lat = false) {
             }
         }
         if (nextIntervals == null) {
+            wheelIdx++
             glow()
             return
         }
@@ -535,7 +543,6 @@ function invertTriadDown(lat = false) {
     if (lat) {
         let ok = shiftTriad(freqs, 0)
         if (!ok) {
-            // alert('breka on thru down')
             if (wheelIdx == diatonicWheel.length - 1) {
                 wheelIdx = 0
             } else {
@@ -552,18 +559,19 @@ const minBtn = document.getElementById('min')
 const majBtn = document.getElementById('maj')
 const dimBtn = document.getElementById('dim')
 const augBtn = document.getElementById('aug')
+const signTog = document.getElementById('sign-tog')
 
 const buttons = document.getElementById('buttons')
 
 // delegate button click actions
 buttons.addEventListener('click', (e) => {
-    if (tri.length < 1) {
+    if (tri.length < 1 && e.target.id != 'sign-tog') {
         displayWarning()
         return
     }
     const buttID = e.target.id
     if (buttID == 'sign-tog') {
-        signButtonNameToggle(e)
+        switchSignsRedux()
         return
     }
     const thirdIdx = tri.indexOf(third)
@@ -583,7 +591,6 @@ buttons.addEventListener('click', (e) => {
         case 'min': {
             ok = toMin(thirdIdx, fifthIdx)
             if (keyMode) toggleKeyMode()
-            // capturedRoot = null -- cleaner way to GET OUT of key MODE???
             break
         }
         case 'dim': {
@@ -608,6 +615,56 @@ buttons.addEventListener('click', (e) => {
     }
 })
 
+const dpad = document.getElementById('dpad')
+dpad.addEventListener('click', (e) => {
+    if (tri.length < 1) {
+        displayWarning()
+        return
+    }
+    let dirBtn = e.target.id
+    switch (dirBtn) {
+        case 'up':
+            invertTriadUp()
+            break
+        case 'down':
+            invertTriadDown()
+            break
+        case 'up-lat':
+            invertTriadUp(true)
+            break
+        case 'down-lat':
+            invertTriadDown(true)
+    }
+})
+
+document.addEventListener('keydown', (event) => {
+    if (tri.length < 1) {
+        return
+    }
+    switch (event.key) {
+        case 'ArrowUp':
+        case 'k': {
+            invertTriadUp()
+            break
+        }
+        case 'ArrowDown':
+        case 'j': {
+            invertTriadDown()
+            break
+        }
+        case 'ArrowRight':
+        case 'l': {
+            invertTriadUp(true)
+            break
+        }
+        case 'ArrowLeft':
+        case 'h': {
+            invertTriadDown(true)
+            break
+        }
+    }
+})
+// Shift functions
 function toMaj(thirdIdx, fifthIdx) {
     if (quality == 'min' && third.nextElementSibling) {
         tri[thirdIdx] = third.nextElementSibling
@@ -674,17 +731,14 @@ function toAug(thirdIdx, fifthIdx) {
     return true
 }
 
-// really only useful when current triad is neutral (like F#/Gb and key of C)
+// really only useful when current triad is neutral (like F#/Gb or C)
+// TODO: make btn only visible for those circumstances
 function signButtonNameToggle(e) {
-    if (rootAlpha == undefined) {
-        return
-    }
     if (e.target.innerText.includes('♭')) {
         e.target.innerText = '♯'
     } else {
         e.target.innerText = '♭'
     }
-    switchSignsRedux()
     calcTriadType()
 }
 
@@ -710,8 +764,8 @@ function updateUI() {
     for (let s of qualityBtnz) {
         s.classList.remove('active')
     }
-    if (keyMode) keyModeButton.classList.add('visible', 'active')
-    else {
+
+    if (!keyMode) {
         keyModeButton.classList.remove('visible', 'active')
         switch (quality) {
             case 'maj':
@@ -730,57 +784,16 @@ function updateUI() {
     }
 }
 
-const dpad = document.getElementById('dpad')
-
-dpad.addEventListener('click', (e) => {
-    if (tri.length < 1) {
-        displayWarning()
-        return
-    }
-    let dirBtn = e.target.id
-    switch (dirBtn) {
-        case 'up':
-            invertTriadUp()
-            break
-        case 'down':
-            invertTriadDown()
-            break
-        case 'up-lat':
-            invertTriadUp(true)
-            break
-        case 'down-lat':
-            invertTriadDown(true)
-    }
-})
-
-document.addEventListener('keydown', (event) => {
-    if (tri.length < 1) {
-        return
-    }
-    switch (event.key) {
-        case 'ArrowUp':
-        case 'k': {
-            invertTriadUp()
-            break
+function validSwitchableKey() {
+    let validKeys = ['C', 'F#', 'Gb']
+    if (capturedRoot == null)
+        for (let key of validKeys) {
+            if (rootAlpha == key) {
+                return true
+            }
         }
-        case 'ArrowDown':
-        case 'j': {
-            invertTriadDown()
-            break
-        }
-        case 'ArrowRight':
-        case 'l': {
-            invertTriadUp(true)
-            break
-        }
-        case 'ArrowLeft':
-        case 'h': {
-            invertTriadDown(true)
-            break
-        }
-    }
-})
-
+    return false
+}
 function toggleKeyMode() {
     keyMode = !keyMode
     if (keyMode) {
@@ -788,6 +801,7 @@ function toggleKeyMode() {
         wheelIdx = 0
     } else {
         capturedRoot = null
+        // remove visible
     }
     keyModeButton.classList.toggle('active')
 }

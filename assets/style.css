@@ -175,7 +175,6 @@ header h3 {
 
     /* width: auto; */
 
-    /* user-select: none; */
 
     /* -webkit-user-select: none; */
 }
@@ -241,6 +240,9 @@ header h3 {
 	justify-content: center;
 	align-items: center;
 	touch-action: manipulation;
+/* stylelint-disable-next-line property-no-vendor-prefix */
+    -webkit-user-select: none; /* safari */
+    user-select: none;
 }
 
 #dash button {
@@ -269,6 +271,14 @@ header h3 {
 	transition: background-color 0.3s ease;
 }
 
+#up {
+	margin-bottom: 0 !important;
+}
+
+#down {
+	margin-top: 0 !important;
+}
+
 #key-mode {
 	opacity: 0;
 	pointer-events:none;
@@ -284,6 +294,11 @@ header h3 {
 
 #sign-tog {
 width: 32px !important;
+}
+
+#sign-tog.inactive {
+opacity: 0.5;
+pointer-events: none;
 }
 
 
@@ -348,8 +363,7 @@ border-radius: 10px;
 }
 
 .arrow-keys {
-	font-size: 12px;
-	font-weight: 100;
+	font-size: 11px;
 	padding: 0;
 	margin: 0;
 	color:#8A9B7B;
