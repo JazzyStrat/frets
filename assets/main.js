@@ -361,6 +361,7 @@ function shiftTriad(absPitches, offset) {
         calcTriadType()
         return true
     } else {
+        // if keymode, try moving down a string set, same inversion.
         console.log('⚡️ unshiftable')
         glow()
         return false
@@ -369,15 +370,16 @@ function shiftTriad(absPitches, offset) {
 
 // indicate move not possible / current state
 function glow() {
-    for (let note of tri) {
+    let refCopy = [...tri]
+    for (let note of refCopy) {
         note.lastElementChild.classList.add('glow')
         // race condition?
     }
     setTimeout(() => {
-        for (let note of tri) {
+        for (let note of refCopy) {
             note.lastElementChild.classList.remove('glow')
         }
-    }, 200) // is that enough, marvin
+    }, 200) // is that enough, marvin. apparently not
 }
 
 function switchSignsRedux() {
@@ -471,6 +473,7 @@ function invertTriadUp(lat = false) {
     if (lat) {
         let ok = shiftTriad(freqs, 0)
         if (!ok) {
+            console.log("couldn't move to:", freqs)
             wheelIdx--
         }
         return
@@ -570,6 +573,7 @@ buttons.addEventListener('click', (e) => {
         return
     }
     const buttID = e.target.id
+    // only clickable for valid keys
     if (buttID == 'sign-tog') {
         switchSignsRedux()
         return
@@ -742,24 +746,25 @@ function signButtonNameToggle(e) {
     calcTriadType()
 }
 
-const qualityBtnz = [minBtn, majBtn, dimBtn, augBtn]
-
 function updateName() {
     if (capturedRoot) {
         triadInfo.innerHTML = `<div id='key-hud'>Key of ${capturedRoot}</div>  
 			<div><b>${rootAlpha} ${quality}</b></div>
 			<div><i>${inversion}</i></div>`
+        triadInfo.classList.remove('narrow')
     } else {
         triadInfo.innerHTML = `
 		<p class="ghost"></p>
 			<p><b>${rootAlpha} ${quality}</b><i>${inversion}</i></p>
 			<p class='ghost'></p>`
+        triadInfo.classList.add('narrow')
     }
 }
 
+const qualityBtnz = [minBtn, majBtn, dimBtn, augBtn]
+
 function updateUI() {
     updateName()
-    triadInfo.classList.add('fade-in')
 
     for (let s of qualityBtnz) {
         s.classList.remove('active')

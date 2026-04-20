@@ -20,14 +20,17 @@ header {
 	place-items: center;
 }
 
-h1 {
-	font-size: 1.5em;
+h1{
+	font-size: clamp(1rem, 1.4vw, 1.5rem);
 }
 
 h3 {
+	font-size: clamp(.8rem, 1.1vw, 1.5rem);
 	padding: 0;
 	margin: 0;
 }
+
+
 
 header h3 {
   position: absolute;
@@ -49,24 +52,53 @@ header h3 {
 
 #triad-info {
 	position: absolute;
-	display:flex;
 	place-items: center;
-	justify-content: space-between;
-	width: 410px;
+	display:flex;
+	justify-content: center;
+    width: 25%; 
+min-width: 180px;
+max-width: 360px;
 	left: 50%;
-	font-size: 20px;
+	font-size: clamp(1rem, 1.2vw, 1.5rem);
     transition: opacity 0.4s ease;
     transform: translateX(-50%);
 }
 
-#triad-info * {
-	margin: 0 5px;
+#triad-info *:not(.ghost, #key-hud){
+	margin: 0;
+	min-width: 0;
+	flex: 1;
+	text-align: center;
+
+}
+
+#triad-info.narrow {
+	width: 250px;
+}
+
+#triad-info.narrow b {
+	position: relative !important;
+	left: 25px !important;
+}
+
+
+#triad-info p:not(.ghost) {
+	display: flex;
+	flex: 1;
+	justify-content: center;
 }
 
 .ghost {
-  width: 0; /* or match the real item's approximate width */
+  flex: 0 0 1px; /* or match the real item's approximate width */
   visibility: hidden;
 }  
+
+#triad-info b {
+
+}
+
+#triad-info i {
+}
 
 #triad-info.fade-in {
     opacity: 1;
@@ -225,7 +257,7 @@ header h3 {
 
 @media (hover: hover) {
 .fw:hover .emb {
-    opacity: 0.5;
+    opacity: 0.65;
 }
 }
 
@@ -280,8 +312,8 @@ header h3 {
 }
 
 #key-mode {
-	opacity: 0;
-	pointer-events:none;
+	opacity: 0.5;
+	pointer-events: none;
 	height: 40px;
 }
 
@@ -320,10 +352,11 @@ background: #535F4F !important;
 }
 
 #key-hud {
-background-color: #535F4F; 
-padding: 5px;
-border: 2px solid #535F4F; 
+max-width: 125px;
+background-color: #535F4F;
+padding: 10px;
 border-radius: 10px;
+margin:0 12px;
 }
 
 #dpad {
