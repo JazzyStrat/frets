@@ -39,7 +39,7 @@ function calcTriadType() {
     const intervals = `${firstInterval},${secInterval}`
 
     const desc = triadMap.get(intervals)
-    if (desc == null) {
+    if (desc == undefined) {
         alert('rutro, unidentifiable triad')
         return null
     }
@@ -82,7 +82,6 @@ function alphaCheck(desc) {
 
     const distOne = thirdAscii - rootAscii
     const distTwo = fifthAscii - thirdAscii
-
     // ensure correct alpha spelling
     // alpha dist of either 2 or -5 covers thirds, sixths, or thirds wrapped
     // A B C D E F G A                     TODO: fix for F dim alphas
@@ -249,7 +248,6 @@ function buildFretboard(boardID, stringsArr) {
         fretNum.innerHTML = `<p>${i + 1}</p>`
         fretNums.appendChild(fretNum)
     })
-
     board.insertAdjacentElement('afterend', fretNums)
 
     // add hidden, togglable notes
@@ -442,6 +440,7 @@ function invertTriadUp(lat = false) {
 
         // different span use based on inversion type
         // stemming from root offset (os)
+        // still orderd by pitch in array
         switch (inversion) {
             case 'root position': {
                 freqs[0] += diatonicWheel[wheelIdx].os
@@ -746,7 +745,7 @@ function signButtonNameToggle(e) {
     calcTriadType()
 }
 
-function updateName() {
+function updateDash() {
     if (capturedRoot) {
         triadInfo.innerHTML = `<div id='key-hud'>Key of ${capturedRoot}</div>  
 			<div><b>${rootAlpha} ${quality}</b></div>
@@ -764,7 +763,7 @@ function updateName() {
 const qualityBtnz = [minBtn, majBtn, dimBtn, augBtn]
 
 function updateUI() {
-    updateName()
+    updateDash()
 
     for (let s of qualityBtnz) {
         s.classList.remove('active')
@@ -790,15 +789,16 @@ function updateUI() {
 }
 
 function validSwitchableKey() {
-    let validKeys = ['C', 'F#', 'Gb']
-    if (capturedRoot == null)
-        for (let key of validKeys) {
-            if (rootAlpha == key) {
-                return true
-            }
+    let validKeys = ['C', 'Gb', 'F#']
+    let check = keyMode ? capturedRoot : rootAlpha
+    for (let key of validKeys) {
+        if (check == key) {
+            return true
         }
+    }
     return false
 }
+
 function toggleKeyMode() {
     keyMode = !keyMode
     if (keyMode) {
