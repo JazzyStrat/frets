@@ -404,9 +404,9 @@ function invertTriadUp(lat = false) {
     tri.forEach((note) => {
         freqs.push(note.abs)
     })
-    // use map + array to get right freqs:
-    // triadMap and diatonicWheel
+    // use TriadMap + diatonicWheel array to get next freqs
     if (lat && keyMode) {
+        // get next lateral chord index
         if (wheelIdx + 1 < diatonicWheel.length) {
             wheelIdx++
         } else {
@@ -416,6 +416,7 @@ function invertTriadUp(lat = false) {
         let nextQuality = diatonicWheel[wheelIdx].q
         let nextIntervals = ''
         // backwards map key lookup
+        //
         for (let [k, v] of triadMap) {
             // inversion type the same for lateral changes
             if (v.inversion == inversion && v.quality == nextQuality) {

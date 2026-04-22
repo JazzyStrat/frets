@@ -10,6 +10,8 @@ import (
 
 func main() {
 
+	mappa := map[string]struct{}{}
+	fmt.Println(mappa)
 	// Air can apparently do what this does now
 	fmt.Println("no time to fret")
 

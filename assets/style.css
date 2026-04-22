@@ -55,11 +55,11 @@ header h3 {
 	place-items: center;
 	display:flex;
 	justify-content: center;
-    width: 25%; 
-min-width: 180px;
-max-width: 360px;
+    width: 33%; 
+min-width: 255px;
+max-width: 365px;
 	left: 50%;
-	font-size: clamp(1rem, 1.2vw, 1.5rem);
+	font-size: clamp(1rem, 1.0vw, 1.1rem);
     transition: opacity 0.4s ease;
     transform: translateX(-50%);
 }
@@ -93,12 +93,6 @@ max-width: 360px;
   visibility: hidden;
 }  
 
-#triad-info b {
-
-}
-
-#triad-info i {
-}
 
 #triad-info.fade-in {
     opacity: 1;
@@ -211,6 +205,7 @@ max-width: 360px;
     /* -webkit-user-select: none; */
 }
 
+/* stylelint-disable-next-line */
 .fret-number p {
     position: relative;
     display: inline-block;
@@ -392,7 +387,8 @@ margin:0 12px;
 }
 
 .fifth-color {
-	background-color: #1E3B41;
+	/* background-color: #1E3B41; */
+	background-color: #1E3845;
 }
 
 .arrow-keys {
