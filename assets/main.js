@@ -22,7 +22,7 @@ let fifth
 
 // dashboard
 let rootAlpha // just note letter as string
-let quality // maj, min, dim aug
+let quality // maj, min, dim, aug
 let inversion
 
 let triadInfo = document.getElementById('triad-info')
@@ -47,13 +47,10 @@ function calcTriadType() {
     quality = desc.quality
     inversion = desc.inversion
 
-    for (let z = 0; z < 3; z++) {
-        if (z != desc.thirdIdx && z != desc.fifthIdx) {
-            rootAlpha = tri[z].innerText
-            if (keyMode && wheelIdx == 0) capturedRoot = rootAlpha
-            root = tri[z]
-            break
-        }
+    root = tri[desc.rootIdx]
+    rootAlpha = root.innerText
+    if (keyMode && !capturedRoot) {
+        capturedRoot = rootAlpha
     }
 
     third = tri[desc.thirdIdx]
@@ -87,12 +84,7 @@ function alphaCheck(desc) {
     // A B C D E F G A                     TODO: fix for F dim alphas
     if ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5)) {
         switchSignsRedux()
-        for (let z = 0; z < 3; z++) {
-            if (z != desc.thirdIdx && z != desc.fifthIdx) {
-                rootAlpha = tri[z].innerText
-                break
-            }
-        }
+        rootAlpha = root.innerText
     }
     let switchable = validSwitchableKey()
     if (switchable) {
@@ -276,6 +268,7 @@ function buildFretboard(boardID, stringsArr) {
 // lay as major triad
 function initTriad(fd) {
     wheelIdx = 0
+    capturedRoot = null
     clearTri()
     // E A D G strings
     // 0th inversion
@@ -351,16 +344,14 @@ function shiftTriad(absPitches, offset) {
             }
         }
     }
-
     //TODO: evaluate neccesity of both conditions
+    // for longitudinal shifts
     if (newTriad.length == 3 && !newTriad.includes(undefined)) {
         clearTri()
         tri = newTriad
         calcTriadType()
         return true
     } else {
-        // if keymode, try moving down a string set, same inversion.
-        console.log('⚡️ unshiftable')
         glow()
         return false
     }
@@ -399,6 +390,7 @@ function switchSignsRedux() {
     })
 }
 
+// mutates pitch vals and calls shiftTriad()
 function invertTriadUp(lat = false) {
     let freqs = []
     tri.forEach((note) => {
@@ -418,7 +410,7 @@ function invertTriadUp(lat = false) {
         // backwards map key lookup
         //
         for (let [k, v] of triadMap) {
-            // inversion type the same for lateral changes
+            // inversion type will be the same for lateral changes
             if (v.inversion == inversion && v.quality == nextQuality) {
                 nextIntervals = k
                 break
@@ -428,15 +420,6 @@ function invertTriadUp(lat = false) {
             wheelIdx--
             glow()
             return
-        }
-
-        const desc = calcTriadType()
-        let rootIdx = -1
-        for (let z = 0; z < 3; z++) {
-            if (z != desc.thirdIdx && z != desc.fifthIdx) {
-                rootIdx = z
-                break
-            }
         }
 
         // different span use based on inversion type
@@ -471,10 +454,12 @@ function invertTriadUp(lat = false) {
     }
 
     if (lat) {
-        let ok = shiftTriad(freqs, 0)
-        if (!ok) {
-            console.log("couldn't move to:", freqs)
-            wheelIdx--
+        if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, 1)) {
+            wheelIdx - 1 >= 0
+                ? wheelIdx--
+                : (wheelIdx = diatonicWheel.length - 1)
+            // wheelIdx =
+            //     (wheelIdx-- + diatonicWheel.length) % diatonicWheel.length
         }
         return
     }
@@ -544,13 +529,8 @@ function invertTriadDown(lat = false) {
         freqs[0] = hp - 12
     }
     if (lat) {
-        let ok = shiftTriad(freqs, 0)
-        if (!ok) {
-            if (wheelIdx == diatonicWheel.length - 1) {
-                wheelIdx = 0
-            } else {
-                wheelIdx++
-            }
+        if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, -1)) {
+            wheelIdx = (wheelIdx + 1) % diatonicWheel.length
         }
         return
     }
@@ -736,7 +716,6 @@ function toAug(thirdIdx, fifthIdx) {
 }
 
 // really only useful when current triad is neutral (like F#/Gb or C)
-// TODO: make btn only visible for those circumstances
 function signButtonNameToggle(e) {
     if (e.target.innerText.includes('♭')) {
         e.target.innerText = '♯'
@@ -826,6 +805,5 @@ function displayWarning() {
 }
 
 console.log(TwelfthRoot(12)) // HARMONIC
-
 buildFretboard('board', mainboard)
 buildFretboard('board2', freeboard)

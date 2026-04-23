@@ -4,6 +4,7 @@ export const triadMap = new Map([
         {
             quality: 'maj',
             inversion: 'root position',
+            rootIdx: 0,
             thirdIdx: 1,
             fifthIdx: 2,
         },
@@ -13,6 +14,7 @@ export const triadMap = new Map([
         {
             quality: 'maj',
             inversion: '1st inversion',
+            rootIdx: 2,
             thirdIdx: 0,
             fifthIdx: 1,
         },
@@ -22,6 +24,7 @@ export const triadMap = new Map([
         {
             quality: 'maj',
             inversion: '2nd inversion',
+            rootIdx: 1,
             thirdIdx: 2,
             fifthIdx: 0,
         },
@@ -31,6 +34,7 @@ export const triadMap = new Map([
         {
             quality: 'min',
             inversion: 'root position',
+            rootIdx: 0,
             thirdIdx: 1,
             fifthIdx: 2,
         },
@@ -40,6 +44,7 @@ export const triadMap = new Map([
         {
             quality: 'min',
             inversion: '1st inversion',
+            rootIdx: 2,
             thirdIdx: 0,
             fifthIdx: 1,
         },
@@ -49,6 +54,7 @@ export const triadMap = new Map([
         {
             quality: 'min',
             inversion: '2nd inversion',
+            rootIdx: 1,
             thirdIdx: 2,
             fifthIdx: 0,
         },
@@ -58,6 +64,7 @@ export const triadMap = new Map([
         {
             quality: 'dim',
             inversion: 'root position',
+            rootIdx: 0,
             thirdIdx: 1,
             fifthIdx: 2,
         },
@@ -67,6 +74,7 @@ export const triadMap = new Map([
         {
             quality: 'dim',
             inversion: '1st inversion',
+            rootIdx: 2,
             thirdIdx: 0,
             fifthIdx: 1,
         },
@@ -76,6 +84,7 @@ export const triadMap = new Map([
         {
             quality: 'dim',
             inversion: '2nd inversion',
+            rootIdx: 1,
             thirdIdx: 2,
             fifthIdx: 0,
         },
@@ -85,6 +94,8 @@ export const triadMap = new Map([
         {
             quality: 'aug',
             inversion: '',
+            // tho not really applicable
+            rootIdx: 0,
             thirdIdx: 1,
             fifthIdx: 2,
         },
