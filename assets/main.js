@@ -32,6 +32,9 @@ let capturedRoot = null
 let wheelIdx
 let keyModeButton = document.getElementById('key-mode')
 
+// FLIP animation guard
+let transitioning = false
+
 // hit up the map, identify triad
 function calcTriadType() {
     const firstInterval = tri[1].abs - tri[0].abs
@@ -67,12 +70,15 @@ function calcTriadType() {
     third.lastElementChild.classList.add('third-color')
     fifth.lastElementChild.classList.add('fifth-color')
 
-    alphaCheck(desc)
+    alphaCheck()
     updateUI()
     return desc
 }
 
-function alphaCheck(desc) {
+function alphaCheck() {
+    if (quality == 'aug') {
+        return
+    }
     let rootAscii = root.innerText.charCodeAt(0)
     let thirdAscii = third.lastElementChild.innerText.charCodeAt(0)
     let fifthAscii = fifth.lastElementChild.innerText.charCodeAt(0)
@@ -323,8 +329,8 @@ function initTriad(fd) {
     calcTriadType()
 }
 
-// sets triad given raw absolute pitch array and string offset
-// from current triad's lowest string
+// shifts triad given raw absolute pitch array and offset from
+// current string
 function shiftTriad(absPitches, offset) {
     let newTriad = []
     let s = tri[0].coord[0] + offset // starting string = current + 0/1/-1
@@ -347,9 +353,137 @@ function shiftTriad(absPitches, offset) {
     //TODO: evaluate neccesity of both conditions
     // for longitudinal shifts
     if (newTriad.length == 3 && !newTriad.includes(undefined)) {
-        clearTri()
-        tri = newTriad
-        calcTriadType()
+        // probably get rid of after viewNameTransition impl
+
+        // experimental animation
+        // guard check
+        if (transitioning) {
+            return false
+        }
+
+        switch (offset) {
+            case 0: {
+                const triIntervals = `${tri[1].abs - tri[0].abs},${tri[2].abs - tri[1].abs}`
+                const triDesc = triadMap.get(triIntervals)
+
+                const newIntervals =
+                    `${newTriad[1].abs - newTriad[0].abs},` +
+                    `${newTriad[2].abs - newTriad[1].abs}`
+
+                const newDesc = triadMap.get(newIntervals)
+
+                const oldRoot = tri[triDesc.rootIdx].lastElementChild
+                const oldThird = tri[triDesc.thirdIdx].lastElementChild
+                const oldFifth = tri[triDesc.fifthIdx].lastElementChild
+                const newRoot = newTriad[newDesc.rootIdx].lastElementChild
+                const newThird = newTriad[newDesc.thirdIdx].lastElementChild
+                const newFifth = newTriad[newDesc.fifthIdx].lastElementChild
+
+                let triBundle = [oldRoot, oldThird, oldFifth]
+                const oldRootRect = oldRoot.getBoundingClientRect()
+                const newRootRect = newRoot.getBoundingClientRect()
+
+                const oldThirdRect = oldThird.getBoundingClientRect()
+                const newThirdRect = newThird.getBoundingClientRect()
+
+                const oldFifthRect = oldFifth.getBoundingClientRect()
+                const newFifthRect = newFifth.getBoundingClientRect()
+
+                const rootDx = newRootRect.left - oldRootRect.left
+                const thirdDx = newThirdRect.left - oldThirdRect.left
+                const fifthDx = newFifthRect.left - oldFifthRect.left
+
+                const rootDy = newRootRect.top - oldRootRect.top
+                const thirdDy = newThirdRect.top - oldThirdRect.top
+                const fifthDy = newFifthRect.top - oldFifthRect.top
+
+                triBundle[0].dx = rootDx
+                triBundle[0].dy = rootDy
+                triBundle[1].dx = thirdDx
+                triBundle[1].dy = thirdDy
+                triBundle[2].dx = fifthDx
+                triBundle[2].dy = fifthDy
+
+                transitioning = true
+                for (let el of triBundle) {
+                    requestAnimationFrame(() => {
+                        el.style.transition = 'transform 120ms ease'
+                        el.style.transform = `translate(${el.dx}px, ${el.dy}px)`
+                        el.addEventListener(
+                            'transitionend',
+                            () => {
+                                el.style.transition = ''
+                                el.style.transform = ''
+                                clearTri()
+                                tri = newTriad
+                                calcTriadType()
+                                transitioning = false
+                            },
+                            { once: true }
+                        )
+                    })
+                }
+                break
+            }
+            case 1: {
+                const el = tri[0].lastElementChild
+                const oldRect = el.getBoundingClientRect()
+                const newRect =
+                    newTriad[2].lastElementChild.getBoundingClientRect()
+
+                const dx = newRect.left - oldRect.left
+                const dy = newRect.top - oldRect.top
+
+                // const refCopy = [...newTriad]
+                transitioning = true
+                requestAnimationFrame(() => {
+                    el.style.transition = 'transform 120ms ease'
+                    el.style.transform = `translate(${dx}px, ${dy}px)`
+                    el.addEventListener(
+                        'transitionend',
+                        () => {
+                            el.style.transition = ''
+                            el.style.transform = ''
+                            clearTri()
+                            tri = newTriad
+                            calcTriadType()
+                            transitioning = false
+                        },
+                        { once: true }
+                    )
+                })
+                break
+            }
+            case -1: {
+                const el = tri[2].lastElementChild
+                const oldRect = el.getBoundingClientRect()
+                const newRect =
+                    newTriad[0].lastElementChild.getBoundingClientRect()
+
+                const dx = newRect.left - oldRect.left
+                const dy = newRect.top - oldRect.top
+
+                // const refCopy = [...newTriad]
+                transitioning = true
+                requestAnimationFrame(() => {
+                    el.style.transition = 'transform 120ms ease'
+                    el.style.transform = `translate(${dx}px, ${dy}px)`
+                    el.addEventListener(
+                        'transitionend',
+                        () => {
+                            el.style.transition = ''
+                            el.style.transform = ''
+                            clearTri()
+                            tri = newTriad
+                            calcTriadType()
+                            transitioning = false
+                        },
+                        { once: true }
+                    )
+                })
+                break
+            }
+        }
         return true
     } else {
         glow()
@@ -391,7 +525,7 @@ function switchSignsRedux() {
 }
 
 // mutates pitch vals and calls shiftTriad()
-function invertTriadUp(lat = false) {
+function upTriad(lat = false) {
     let freqs = []
     tri.forEach((note) => {
         freqs.push(note.abs)
@@ -452,7 +586,7 @@ function invertTriadUp(lat = false) {
         freqs[1] = freqs[2]
         freqs[2] = lp + 12
     }
-
+    // allow possible wrap-around to next string set (both modes)
     if (lat) {
         if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, 1)) {
             wheelIdx - 1 >= 0
@@ -466,7 +600,7 @@ function invertTriadUp(lat = false) {
     shiftTriad(freqs, 1)
 }
 
-function invertTriadDown(lat = false) {
+function downTriad(lat = false) {
     let freqs = []
     tri.forEach((note) => {
         freqs.push(note.abs)
@@ -528,6 +662,7 @@ function invertTriadDown(lat = false) {
         freqs[1] = freqs[0]
         freqs[0] = hp - 12
     }
+    // allow possible wrap-around to next string set (both modes)
     if (lat) {
         if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, -1)) {
             wheelIdx = (wheelIdx + 1) % diatonicWheel.length
@@ -608,16 +743,16 @@ dpad.addEventListener('click', (e) => {
     let dirBtn = e.target.id
     switch (dirBtn) {
         case 'up':
-            invertTriadUp()
+            upTriad()
             break
         case 'down':
-            invertTriadDown()
+            downTriad()
             break
         case 'up-lat':
-            invertTriadUp(true)
+            upTriad(true)
             break
         case 'down-lat':
-            invertTriadDown(true)
+            downTriad(true)
     }
 })
 
@@ -628,22 +763,22 @@ document.addEventListener('keydown', (event) => {
     switch (event.key) {
         case 'ArrowUp':
         case 'k': {
-            invertTriadUp()
+            upTriad()
             break
         }
         case 'ArrowDown':
         case 'j': {
-            invertTriadDown()
+            downTriad()
             break
         }
         case 'ArrowRight':
         case 'l': {
-            invertTriadUp(true)
+            upTriad(true)
             break
         }
         case 'ArrowLeft':
         case 'h': {
-            invertTriadDown(true)
+            downTriad(true)
             break
         }
     }
@@ -713,16 +848,6 @@ function toAug(thirdIdx, fifthIdx) {
         return false
     }
     return true
-}
-
-// really only useful when current triad is neutral (like F#/Gb or C)
-function signButtonNameToggle(e) {
-    if (e.target.innerText.includes('♭')) {
-        e.target.innerText = '♯'
-    } else {
-        e.target.innerText = '♭'
-    }
-    calcTriadType()
 }
 
 function updateDash() {

@@ -14,6 +14,14 @@ body {
 
 }
 
+::view-transition-old(root) {
+  animation: slide-out 300ms ease forwards;
+}
+
+::view-transition-new(root) {
+  animation: slide-in 300ms ease forwards;
+}
+
 header {
 	display:flex;
 	height: 36px;
@@ -222,7 +230,11 @@ max-width: 365px;
     background-color: #535F4F;
     box-sizing: border-box;
     opacity: 0;
-    transition: opacity 0.3s ease-out, width .4s ease-in-out;
+
+
+	/* cant do this if employing FLIP animation */
+
+    /* transition: opacity 0.3s ease-out, width .4s ease-in-out; */
 }
 
 .emb.glow {
