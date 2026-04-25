@@ -1,5 +1,7 @@
 tmp/
 assets/snippys.js
 **/.DS_Store
+go.mod
+go.sum
 # todo.txt
 

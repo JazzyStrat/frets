@@ -34,6 +34,7 @@ let keyModeButton = document.getElementById('key-mode')
 
 // FLIP animation guard
 let transitioning = false
+let lateralAttemptKeyMode = false
 
 // hit up the map, identify triad
 function calcTriadType() {
@@ -353,56 +354,15 @@ function shiftTriad(absPitches, offset) {
     //TODO: evaluate neccesity of both conditions
     // for longitudinal shifts
     if (newTriad.length == 3 && !newTriad.includes(undefined)) {
-        // probably get rid of after viewNameTransition impl
-
         // experimental animation
         // guard check
         if (transitioning) {
             return false
         }
 
-        switch (offset) {
-            case 0: {
-                const triIntervals = `${tri[1].abs - tri[0].abs},${tri[2].abs - tri[1].abs}`
-                const triDesc = triadMap.get(triIntervals)
-
-                const newIntervals =
-                    `${newTriad[1].abs - newTriad[0].abs},` +
-                    `${newTriad[2].abs - newTriad[1].abs}`
-
-                const newDesc = triadMap.get(newIntervals)
-
-                const oldRoot = tri[triDesc.rootIdx].lastElementChild
-                const oldThird = tri[triDesc.thirdIdx].lastElementChild
-                const oldFifth = tri[triDesc.fifthIdx].lastElementChild
-                const newRoot = newTriad[newDesc.rootIdx].lastElementChild
-                const newThird = newTriad[newDesc.thirdIdx].lastElementChild
-                const newFifth = newTriad[newDesc.fifthIdx].lastElementChild
-
-                let triBundle = [oldRoot, oldThird, oldFifth]
-                const oldRootRect = oldRoot.getBoundingClientRect()
-                const newRootRect = newRoot.getBoundingClientRect()
-
-                const oldThirdRect = oldThird.getBoundingClientRect()
-                const newThirdRect = newThird.getBoundingClientRect()
-
-                const oldFifthRect = oldFifth.getBoundingClientRect()
-                const newFifthRect = newFifth.getBoundingClientRect()
-
-                const rootDx = newRootRect.left - oldRootRect.left
-                const thirdDx = newThirdRect.left - oldThirdRect.left
-                const fifthDx = newFifthRect.left - oldFifthRect.left
-
-                const rootDy = newRootRect.top - oldRootRect.top
-                const thirdDy = newThirdRect.top - oldThirdRect.top
-                const fifthDy = newFifthRect.top - oldFifthRect.top
-
-                triBundle[0].dx = rootDx
-                triBundle[0].dy = rootDy
-                triBundle[1].dx = thirdDx
-                triBundle[1].dy = thirdDy
-                triBundle[2].dx = fifthDx
-                triBundle[2].dy = fifthDy
+        switch (true) {
+            case offset == 0 || lateralAttemptKeyMode == true: {
+                const triBundle = getTriBundles(newTriad)
 
                 transitioning = true
                 for (let el of triBundle) {
@@ -425,8 +385,9 @@ function shiftTriad(absPitches, offset) {
                 }
                 break
             }
-            case 1: {
+            case offset == 1: {
                 const el = tri[0].lastElementChild
+
                 const oldRect = el.getBoundingClientRect()
                 const newRect =
                     newTriad[2].lastElementChild.getBoundingClientRect()
@@ -454,7 +415,7 @@ function shiftTriad(absPitches, offset) {
                 })
                 break
             }
-            case -1: {
+            case offset == -1: {
                 const el = tri[2].lastElementChild
                 const oldRect = el.getBoundingClientRect()
                 const newRect =
@@ -484,11 +445,56 @@ function shiftTriad(absPitches, offset) {
                 break
             }
         }
+        console.log('truth in time')
         return true
     } else {
         glow()
         return false
     }
+}
+
+function getTriBundles(newTriad) {
+    const triIntervals = `${tri[1].abs - tri[0].abs},${tri[2].abs - tri[1].abs}`
+    const triDesc = triadMap.get(triIntervals)
+
+    const newIntervals =
+        `${newTriad[1].abs - newTriad[0].abs},` +
+        `${newTriad[2].abs - newTriad[1].abs}`
+    const newDesc = triadMap.get(newIntervals)
+
+    const oldRoot = tri[triDesc.rootIdx].lastElementChild
+    const oldThird = tri[triDesc.thirdIdx].lastElementChild
+    const oldFifth = tri[triDesc.fifthIdx].lastElementChild
+    const newRoot = newTriad[newDesc.rootIdx].lastElementChild
+    const newThird = newTriad[newDesc.thirdIdx].lastElementChild
+    const newFifth = newTriad[newDesc.fifthIdx].lastElementChild
+
+    const oldRootRect = oldRoot.getBoundingClientRect()
+    const newRootRect = newRoot.getBoundingClientRect()
+
+    const oldThirdRect = oldThird.getBoundingClientRect()
+    const newThirdRect = newThird.getBoundingClientRect()
+
+    const oldFifthRect = oldFifth.getBoundingClientRect()
+    const newFifthRect = newFifth.getBoundingClientRect()
+
+    const rootDx = newRootRect.left - oldRootRect.left
+    const thirdDx = newThirdRect.left - oldThirdRect.left
+    const fifthDx = newFifthRect.left - oldFifthRect.left
+
+    const rootDy = newRootRect.top - oldRootRect.top
+    const thirdDy = newThirdRect.top - oldThirdRect.top
+    const fifthDy = newFifthRect.top - oldFifthRect.top
+
+    let triBundle = [oldRoot, oldThird, oldFifth]
+    triBundle[0].dx = rootDx
+    triBundle[0].dy = rootDy
+    triBundle[1].dx = thirdDx
+    triBundle[1].dy = thirdDy
+    triBundle[2].dx = fifthDx
+    triBundle[2].dy = fifthDy
+
+    return triBundle
 }
 
 // indicate move not possible / current state
@@ -587,14 +593,16 @@ function upTriad(lat = false) {
         freqs[2] = lp + 12
     }
     // allow possible wrap-around to next string set (both modes)
-    if (lat) {
-        if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, 1)) {
+    if (lat && !shiftTriad(freqs, 0)) {
+        if (keyMode) lateralAttemptKeyMode = true
+        if (!shiftTriad(freqs, 1)) {
             wheelIdx - 1 >= 0
                 ? wheelIdx--
                 : (wheelIdx = diatonicWheel.length - 1)
             // wheelIdx =
             //     (wheelIdx-- + diatonicWheel.length) % diatonicWheel.length
         }
+        lateralAttemptKeyMode = false
         return
     }
     shiftTriad(freqs, 1)
@@ -663,8 +671,10 @@ function downTriad(lat = false) {
         freqs[0] = hp - 12
     }
     // allow possible wrap-around to next string set (both modes)
-    if (lat) {
-        if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, -1)) {
+    // with proper animation type
+    if (lat && !shiftTriad(freqs, 0)) {
+        if (keyMode) lateralAttemptKeyMode = true
+        if (!shiftTriad(freqs, -1)) {
             wheelIdx = (wheelIdx + 1) % diatonicWheel.length
         }
         return
