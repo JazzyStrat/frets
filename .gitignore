@@ -1,5 +1,6 @@
 tmp/
 assets/snippys.js
+assets/shifters.js
 **/.DS_Store
 go.mod
 go.sum

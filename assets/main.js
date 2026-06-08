@@ -348,7 +348,7 @@ function shiftTriad(absPitches, offset) {
 
     for (const pitch of absPitches) {
         for (let f = 0; f <= LAST_FRET; f++) {
-            console.log('s, f', s, f)
+            // console.log('s, f', s, f)
             if (mainboard[s][f].abs == pitch) {
                 newTriad.push(mainboard[s][f])
                 s++
@@ -379,11 +379,11 @@ function shiftTriad(absPitches, offset) {
                             () => {
                                 el.style.transition = ''
                                 el.style.transform = ''
+                                animating = false
                                 clearTri()
 
                                 tri = newTriad
                                 calcTriadType()
-                                animating = false
                             },
                             { once: true }
                         )
@@ -411,10 +411,11 @@ function shiftTriad(absPitches, offset) {
                         () => {
                             el.style.transition = ''
                             el.style.transform = ''
+                            animating = false
+
                             clearTri()
                             tri = newTriad
                             calcTriadType()
-                            animating = false
                         },
                         { once: true }
                     )
@@ -440,10 +441,11 @@ function shiftTriad(absPitches, offset) {
                         () => {
                             el.style.transition = ''
                             el.style.transform = ''
+                            animating = false
+
                             clearTri()
                             tri = newTriad
                             calcTriadType()
-                            animating = false
                         },
                         { once: true }
                     )
@@ -704,15 +706,6 @@ let snap = {
     abs: [],
     loStr: 0,
 }
-let duration = 1000
-
-const speedDisplay = document.getElementById('speed-display')
-
-function updateSpeed() {
-    speedDisplay.innerText = `${duration / 1000} sec`
-}
-
-updateSpeed()
 
 cycleBtns.addEventListener('click', (e) => {
     if (!cycling) {
@@ -729,13 +722,25 @@ cycleBtns.addEventListener('click', (e) => {
     recursiveCycle(direction)
 })
 
+const speedDisplay = document.getElementById('speed-display')
+
+function updateSpeedDisplay() {
+    speedDisplay.innerText = `${duration / 1000} sec`
+}
+
+const speeds = [1, 3, 5, 7, 10, 15, 30]
+let speedIdx = 1
+let duration = speeds[speedIdx] * 1000
+updateSpeedDisplay()
+
 cycleSpeedBtns.addEventListener('click', (e) => {
-    if (e.target.id == 'speed-up' && duration != 1000) {
-        duration -= 1000
-    } else if (e.target.id == 'speed-down' && duration != 5000) {
-        duration += 1000
+    if (e.target.id == 'speed-up' && speedIdx > 0) {
+        speedIdx--
+    } else if (e.target.id == 'speed-down' && speedIdx < speeds.length - 1) {
+        ++speedIdx
     }
-    updateSpeed()
+    duration = speeds[speedIdx] * 1000
+    updateSpeedDisplay()
 })
 
 let activeTimeoutID
