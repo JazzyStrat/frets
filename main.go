@@ -12,7 +12,7 @@ func main() {
 
 	mappa := map[string]struct{}{}
 	fmt.Println(mappa)
-	// Air can apparently do what this does now
+	// Air can apparently do what aarol's reload does now
 	fmt.Println("no time to fret")
 
 	mux := http.NewServeMux()

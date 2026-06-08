@@ -1,9 +1,4 @@
-import {
-    triadMap,
-    noteMapFlats,
-    noteMapSharps,
-    diatonicWheel,
-} from './/maps.js'
+import { triadMap, noteMapFlats, noteMapSharps, diatonicWheel } from './maps.js'
 
 const LAST_FRET = 15
 
@@ -33,9 +28,9 @@ let wheelIdx
 let keyModeButton = document.getElementById('key-mode')
 
 // FLIP animation guard
-let transitioning = false
-let lateralAttemptKeyMode = false
+let animating = false
 
+let unshiftable = false
 // hit up the map, identify triad
 function calcTriadType() {
     const firstInterval = tri[1].abs - tri[0].abs
@@ -50,9 +45,9 @@ function calcTriadType() {
 
     quality = desc.quality
     inversion = desc.inversion
-
     root = tri[desc.rootIdx]
     rootAlpha = root.innerText
+
     if (keyMode && !capturedRoot) {
         capturedRoot = rootAlpha
     }
@@ -78,6 +73,7 @@ function calcTriadType() {
 
 function alphaCheck() {
     if (quality == 'aug') {
+        //otherwise cycling back in forth for sharps/flats
         return
     }
     let rootAscii = root.innerText.charCodeAt(0)
@@ -89,14 +85,18 @@ function alphaCheck() {
     // ensure correct alpha spelling
     // alpha dist of either 2 or -5 covers thirds, sixths, or thirds wrapped
     // A B C D E F G A                     TODO: fix for F dim alphas
-    if ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5)) {
-        switchSignsRedux()
+    if (
+        !keyMode &&
+        ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5))
+    ) {
+        console.log('switch symbols on: ', keyMode, distOne, distTwo)
+        switchSigns()
+        updateDash()
         rootAlpha = root.innerText
     }
-    let switchable = validSwitchableKey()
-    if (switchable) {
+    if (validSwitchableKey() && !keyMode) {
         signTog.classList.remove('inactive')
-    } else {
+    } else if (!keyMode) {
         signTog.classList.add('inactive')
     }
 }
@@ -146,6 +146,7 @@ function absToNote(note, flats) {
 // distance from nut to fret n
 function TwelfthRoot(n) {
     return 1 - Math.pow(2, -n / 12)
+    //2−n/12
 }
 
 // params: board css ID, empty ref array
@@ -178,7 +179,7 @@ function buildFretboard(boardID, stringsArr) {
         const nutZero = document.createElement('div')
         nutZero.className = 'nut'
 
-        // Standard Tuning intervals - set nut values
+        // set nut values, Standard Tuning intervals
         if (s <= 3) {
             abs = s * 5
         } else if (s == 4) {
@@ -264,6 +265,8 @@ function buildFretboard(boardID, stringsArr) {
         // exclude highest playable note on fretboard
         if (fretDiv && fretDiv != mainboard[5][LAST_FRET]) {
             if (boardID == 'board') {
+                cycling = false
+                snap.abs = []
                 initTriad(fretDiv)
             } else {
                 fretDiv.lastElementChild.classList.toggle('active')
@@ -271,14 +274,12 @@ function buildFretboard(boardID, stringsArr) {
         }
     })
 }
-
-// lay as major triad
+// 0th Maj triad init
 function initTriad(fd) {
     wheelIdx = 0
     capturedRoot = null
     clearTri()
-    // E A D G strings
-    // 0th inversion
+    // starting on E A D G strings
     if (fd.coord[0] < mainboard.length - 2) {
         const thirdPitch = fd.abs + 4
         const fifthPitch = fd.abs + 7
@@ -338,12 +339,16 @@ function shiftTriad(absPitches, offset) {
 
     if (s < 0 || s > 3) {
         console.log('⚡️ unshiftable')
+        if (cycling) {
+            unshiftable = true
+        }
         glow()
         return false
     }
 
     for (const pitch of absPitches) {
         for (let f = 0; f <= LAST_FRET; f++) {
+            console.log('s, f', s, f)
             if (mainboard[s][f].abs == pitch) {
                 newTriad.push(mainboard[s][f])
                 s++
@@ -351,21 +356,21 @@ function shiftTriad(absPitches, offset) {
             }
         }
     }
-    //TODO: evaluate neccesity of both conditions
-    // for longitudinal shifts
+
+    // validate newTriad
+    // TODO: evaluate neccesity of both conditions
     if (newTriad.length == 3 && !newTriad.includes(undefined)) {
-        // experimental animation
-        // guard check
-        if (transitioning) {
+        // animation guard
+        if (animating) {
             return false
         }
 
         switch (true) {
-            case offset == 0 || lateralAttemptKeyMode == true: {
-                const triBundle = getTriBundles(newTriad)
-
-                transitioning = true
-                for (let el of triBundle) {
+            // animate all 3 notes moving
+            case offset == 0 || offset < -1 || offset > 1: {
+                const triBundles = getTriBundles(newTriad)
+                animating = true
+                for (let el of triBundles) {
                     requestAnimationFrame(() => {
                         el.style.transition = 'transform 120ms ease'
                         el.style.transform = `translate(${el.dx}px, ${el.dy}px)`
@@ -375,9 +380,10 @@ function shiftTriad(absPitches, offset) {
                                 el.style.transition = ''
                                 el.style.transform = ''
                                 clearTri()
+
                                 tri = newTriad
                                 calcTriadType()
-                                transitioning = false
+                                animating = false
                             },
                             { once: true }
                         )
@@ -385,6 +391,7 @@ function shiftTriad(absPitches, offset) {
                 }
                 break
             }
+            // animate single note, more performant
             case offset == 1: {
                 const el = tri[0].lastElementChild
 
@@ -395,8 +402,7 @@ function shiftTriad(absPitches, offset) {
                 const dx = newRect.left - oldRect.left
                 const dy = newRect.top - oldRect.top
 
-                // const refCopy = [...newTriad]
-                transitioning = true
+                animating = true
                 requestAnimationFrame(() => {
                     el.style.transition = 'transform 120ms ease'
                     el.style.transform = `translate(${dx}px, ${dy}px)`
@@ -408,7 +414,7 @@ function shiftTriad(absPitches, offset) {
                             clearTri()
                             tri = newTriad
                             calcTriadType()
-                            transitioning = false
+                            animating = false
                         },
                         { once: true }
                     )
@@ -425,7 +431,7 @@ function shiftTriad(absPitches, offset) {
                 const dy = newRect.top - oldRect.top
 
                 // const refCopy = [...newTriad]
-                transitioning = true
+                animating = true
                 requestAnimationFrame(() => {
                     el.style.transition = 'transform 120ms ease'
                     el.style.transform = `translate(${dx}px, ${dy}px)`
@@ -437,7 +443,7 @@ function shiftTriad(absPitches, offset) {
                             clearTri()
                             tri = newTriad
                             calcTriadType()
-                            transitioning = false
+                            animating = false
                         },
                         { once: true }
                     )
@@ -445,7 +451,6 @@ function shiftTriad(absPitches, offset) {
                 break
             }
         }
-        console.log('truth in time')
         return true
     } else {
         glow()
@@ -453,6 +458,7 @@ function shiftTriad(absPitches, offset) {
     }
 }
 
+// returns dx,dy for each corresponding note
 function getTriBundles(newTriad) {
     const triIntervals = `${tri[1].abs - tri[0].abs},${tri[2].abs - tri[1].abs}`
     const triDesc = triadMap.get(triIntervals)
@@ -486,15 +492,15 @@ function getTriBundles(newTriad) {
     const thirdDy = newThirdRect.top - oldThirdRect.top
     const fifthDy = newFifthRect.top - oldFifthRect.top
 
-    let triBundle = [oldRoot, oldThird, oldFifth]
-    triBundle[0].dx = rootDx
-    triBundle[0].dy = rootDy
-    triBundle[1].dx = thirdDx
-    triBundle[1].dy = thirdDy
-    triBundle[2].dx = fifthDx
-    triBundle[2].dy = fifthDy
+    let triBundles = [oldRoot, oldThird, oldFifth]
+    triBundles[0].dx = rootDx
+    triBundles[0].dy = rootDy
+    triBundles[1].dx = thirdDx
+    triBundles[1].dy = thirdDy
+    triBundles[2].dx = fifthDx
+    triBundles[2].dy = fifthDy
 
-    return triBundle
+    return triBundles
 }
 
 // indicate move not possible / current state
@@ -511,7 +517,7 @@ function glow() {
     }, 200) // is that enough, marvin. apparently not
 }
 
-function switchSignsRedux() {
+function switchSigns() {
     let flats = mainboard[0][2].innerText.includes('b')
     if (flats) {
         signTog.innerText = '♭'
@@ -547,8 +553,9 @@ function upTriad(lat = false) {
 
         let nextQuality = diatonicWheel[wheelIdx].q
         let nextIntervals = ''
+
         // backwards map key lookup
-        //
+
         for (let [k, v] of triadMap) {
             // inversion type will be the same for lateral changes
             if (v.inversion == inversion && v.quality == nextQuality) {
@@ -592,20 +599,20 @@ function upTriad(lat = false) {
         freqs[1] = freqs[2]
         freqs[2] = lp + 12
     }
-    // allow possible wrap-around to next string set (both modes)
-    if (lat && !shiftTriad(freqs, 0)) {
-        if (keyMode) lateralAttemptKeyMode = true
+    // regular position upshift
+    if (lat == false) {
+        shiftTriad(freqs, 1)
+        // allows possible wrap-around to next string set (both modes)
+    } else if (!shiftTriad(freqs, 0)) {
         if (!shiftTriad(freqs, 1)) {
             wheelIdx - 1 >= 0
                 ? wheelIdx--
                 : (wheelIdx = diatonicWheel.length - 1)
+            // or with mod
             // wheelIdx =
             //     (wheelIdx-- + diatonicWheel.length) % diatonicWheel.length
         }
-        lateralAttemptKeyMode = false
-        return
     }
-    shiftTriad(freqs, 1)
 }
 
 function downTriad(lat = false) {
@@ -624,15 +631,11 @@ function downTriad(lat = false) {
         let nextQuality = diatonicWheel[wheelIdx].q
         let nextIntervals
         for (let [k, v] of triadMap) {
+            // since inversion type is constant laterally
             if (v.inversion == inversion && v.quality == nextQuality) {
                 nextIntervals = k
                 break
             }
-        }
-        if (nextIntervals == null) {
-            wheelIdx++
-            glow()
-            return
         }
 
         // need next offset value when going backwards
@@ -670,16 +673,17 @@ function downTriad(lat = false) {
         freqs[1] = freqs[0]
         freqs[0] = hp - 12
     }
-    // allow possible wrap-around to next string set (both modes)
-    // with proper animation type
-    if (lat && !shiftTriad(freqs, 0)) {
-        if (keyMode) lateralAttemptKeyMode = true
+    // regular position upshift
+    if (lat == false) {
+        shiftTriad(freqs, -1)
+        // allow possible wrap-around to next string set (both modes)
+        // with proper animation type
+    } else if (lat && !shiftTriad(freqs, 0)) {
         if (!shiftTriad(freqs, -1)) {
             wheelIdx = (wheelIdx + 1) % diatonicWheel.length
         }
         return
     }
-    shiftTriad(freqs, -1)
 }
 
 let dash = document.getElementById('dash')
@@ -690,6 +694,78 @@ const augBtn = document.getElementById('aug')
 const signTog = document.getElementById('sign-tog')
 
 const buttons = document.getElementById('buttons')
+const cycleBtns = document.getElementById('cycle-btns')
+const cycleSpeedBtns = document.getElementById('cycle-speeds')
+
+// auto cycling
+let cycling = false
+let snap = {
+    wheelIdx: null,
+    abs: [],
+    loStr: 0,
+}
+let duration = 1000
+
+const speedDisplay = document.getElementById('speed-display')
+
+function updateSpeed() {
+    speedDisplay.innerText = `${duration / 1000} sec`
+}
+
+updateSpeed()
+
+cycleBtns.addEventListener('click', (e) => {
+    if (!cycling) {
+        tri.forEach((note) => {
+            snap.abs.push(note.abs)
+        })
+        snap.wheelIdx = wheelIdx
+        snap.loStr = tri[0].coord[0]
+    }
+    e.target.classList.toggle('active')
+    cycling = !cycling
+
+    let direction = e.target.id
+    recursiveCycle(direction)
+})
+
+cycleSpeedBtns.addEventListener('click', (e) => {
+    if (e.target.id == 'speed-up' && duration != 1000) {
+        duration -= 1000
+    } else if (e.target.id == 'speed-down' && duration != 5000) {
+        duration += 1000
+    }
+    updateSpeed()
+})
+
+let activeTimeoutID
+function recursiveCycle(direction) {
+    if (!cycling) {
+        // cycling = false // wtf
+        unshiftable = false
+        let cycleBtn = document.getElementById(direction)
+        cycleBtn.classList.remove('active')
+
+        clearTimeout(activeTimeoutID)
+        return
+    }
+    activeTimeoutID = setTimeout(() => {
+        if (direction == 'cycle-down') {
+            downTriad(true)
+        } else if (direction == 'cycle-up') {
+            upTriad(true)
+        }
+        if (unshiftable) {
+            // warp back to original position
+            const stringDiff = snap.loStr - tri[0].coord[0]
+            shiftTriad(snap.abs, stringDiff)
+            unshiftable = false
+            wheelIdx = snap.wheelIdx
+            calcTriadType()
+        }
+        recursiveCycle(direction)
+    }, duration)
+}
 
 // delegate button click actions
 buttons.addEventListener('click', (e) => {
@@ -700,7 +776,8 @@ buttons.addEventListener('click', (e) => {
     const buttID = e.target.id
     // only clickable for valid keys
     if (buttID == 'sign-tog') {
-        switchSignsRedux()
+        switchSigns()
+        updateDash()
         return
     }
     const thirdIdx = tri.indexOf(third)
@@ -720,16 +797,19 @@ buttons.addEventListener('click', (e) => {
         case 'min': {
             ok = toMin(thirdIdx, fifthIdx)
             if (keyMode) toggleKeyMode()
+            cycling = false
             break
         }
         case 'dim': {
             ok = toDim(thirdIdx, fifthIdx)
             if (keyMode) toggleKeyMode()
+            cycling = false
             break
         }
         case 'aug': {
             ok = toAug(thirdIdx, fifthIdx)
             if (keyMode) toggleKeyMode()
+            cycling = false
             break
         }
         case 'key-mode': {
@@ -793,6 +873,91 @@ document.addEventListener('keydown', (event) => {
         }
     }
 })
+
+function updateDash() {
+    if (capturedRoot) {
+        triadInfo.innerHTML = `<div id='key-hud'>Key of ${capturedRoot}</div>  
+			<div><b>${rootAlpha} ${quality}</b></div>
+			<div><i>${inversion}</i></div>`
+        triadInfo.classList.remove('narrow')
+    } else {
+        triadInfo.innerHTML = `
+		<p class="ghost"></p>
+			<p><b>${rootAlpha} ${quality}</b><i>${inversion}</i></p>
+			<p class='ghost'></p>`
+        triadInfo.classList.add('narrow')
+    }
+}
+
+const qualityBtnz = [minBtn, majBtn, dimBtn, augBtn]
+
+function updateUI() {
+    updateDash()
+
+    for (let s of qualityBtnz) {
+        s.classList.remove('active')
+    }
+
+    if (!keyMode) {
+        keyModeButton.classList.remove('visible', 'active')
+        switch (quality) {
+            case 'maj':
+                majBtn.classList.add('active')
+                keyModeButton.classList.add('visible')
+                break
+            case 'min':
+                minBtn.classList.add('active')
+                break
+            case 'dim':
+                dimBtn.classList.add('active')
+                break
+            case 'aug':
+                augBtn.classList.add('active')
+        }
+    }
+}
+
+function validSwitchableKey() {
+    let check = keyMode ? capturedRoot : rootAlpha
+    let validKeys = ['C', 'Gb', 'F#']
+    for (let key of validKeys) {
+        if (check == key) {
+            return true
+        }
+    }
+    return false
+}
+
+function toggleKeyMode() {
+    keyMode = !keyMode
+    if (keyMode) {
+        capturedRoot = rootAlpha
+        wheelIdx = 0
+    } else {
+        capturedRoot = null
+        // remove visible
+    }
+    if (validSwitchableKey()) {
+        signTog.classList.remove('inactive')
+    } else {
+        signTog.classList.add('inactive')
+    }
+    keyModeButton.classList.toggle('active')
+}
+
+function displayWarning() {
+    if (document.querySelector('.select-warn') !== null) return
+    const warning = document.createElement('h3')
+    warning.className = 'select-warn'
+    warning.innerText = 'please select a note first'
+    let lc = dash.lastElementChild
+    dash.appendChild(warning, lc)
+
+    setTimeout(() => {
+        warning.remove()
+    }, 2000)
+}
+
 // Shift functions
 function toMaj(thirdIdx, fifthIdx) {
     if (quality == 'min' && third.nextElementSibling) {
@@ -859,86 +1024,7 @@ function toAug(thirdIdx, fifthIdx) {
     }
     return true
 }
-
-function updateDash() {
-    if (capturedRoot) {
-        triadInfo.innerHTML = `<div id='key-hud'>Key of ${capturedRoot}</div>  
-			<div><b>${rootAlpha} ${quality}</b></div>
-			<div><i>${inversion}</i></div>`
-        triadInfo.classList.remove('narrow')
-    } else {
-        triadInfo.innerHTML = `
-		<p class="ghost"></p>
-			<p><b>${rootAlpha} ${quality}</b><i>${inversion}</i></p>
-			<p class='ghost'></p>`
-        triadInfo.classList.add('narrow')
-    }
-}
-
-const qualityBtnz = [minBtn, majBtn, dimBtn, augBtn]
-
-function updateUI() {
-    updateDash()
-
-    for (let s of qualityBtnz) {
-        s.classList.remove('active')
-    }
-
-    if (!keyMode) {
-        keyModeButton.classList.remove('visible', 'active')
-        switch (quality) {
-            case 'maj':
-                majBtn.classList.add('active')
-                keyModeButton.classList.add('visible')
-                break
-            case 'min':
-                minBtn.classList.add('active')
-                break
-            case 'dim':
-                dimBtn.classList.add('active')
-                break
-            case 'aug':
-                augBtn.classList.add('active')
-        }
-    }
-}
-
-function validSwitchableKey() {
-    let validKeys = ['C', 'Gb', 'F#']
-    let check = keyMode ? capturedRoot : rootAlpha
-    for (let key of validKeys) {
-        if (check == key) {
-            return true
-        }
-    }
-    return false
-}
-
-function toggleKeyMode() {
-    keyMode = !keyMode
-    if (keyMode) {
-        capturedRoot = rootAlpha
-        wheelIdx = 0
-    } else {
-        capturedRoot = null
-        // remove visible
-    }
-    keyModeButton.classList.toggle('active')
-}
-
-function displayWarning() {
-    if (document.querySelector('.select-warn') !== null) return
-    const warning = document.createElement('h3')
-    warning.className = 'select-warn'
-    warning.innerText = 'please select a note first'
-    let lc = dash.lastElementChild
-    dash.appendChild(warning, lc)
-
-    setTimeout(() => {
-        warning.remove()
-    }, 2000)
-}
-
 console.log(TwelfthRoot(12)) // HARMONIC
+
 buildFretboard('board', mainboard)
 buildFretboard('board2', freeboard)

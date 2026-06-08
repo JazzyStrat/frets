@@ -101,6 +101,7 @@ export const triadMap = new Map([
         },
     ],
 ])
+
 // maj min min maj maj min dim
 //  +0  +2  +2  +1  +2  +2  +2
 //  	w	w	h	w	w 	w

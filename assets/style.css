@@ -291,16 +291,20 @@ max-width: 365px;
 	margin: 8px;
 }
 
-#up,
-#down,
-#up-lat,
-#down-lat,
-#sign-tog,
-#maj,
-#min,
-#dim,
-#aug,
-#key-mode {
+#buttons {
+	display: flex;
+	flex-direction: column;
+
+}
+
+#row-two {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	
+}
+
+#buttons button, #dpad button {
 	background-color: #5B4F5F;
 	color: #fff;
 	font-size: inherit;
@@ -350,12 +354,25 @@ pointer-events: none;
 #min:hover,
 #dim:hover,
 #aug:hover,
-#dash .active{
+#dash .active,
+#speed-down:hover, #speed-up:hover{
 	background-color: #7B344A !important;
 }
 
 #key-mode.active {
 background: #535F4F !important;
+}
+
+#cycle-up.active, #cycle-down.active{
+background: #535F4F !important;
+}
+
+#cycle-btns {
+/* float: right; */
+}
+
+#speed-display {
+	background-color:#3D3341 !important;
 }
 
 #key-hud {
