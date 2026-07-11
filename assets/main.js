@@ -10,8 +10,6 @@ const boards = [mainboard, freeboard]
 let tri = []
 
 let root
-// TODO: figure out if getting rid of these makes sense
-// makes sense if you're ok having multiple local variables for them
 let third
 let fifth
 
@@ -25,12 +23,11 @@ let triadInfo = document.getElementById('triad-info')
 let keyMode = false
 let capturedRoot = null
 let wheelIdx
-let keyModeButton = document.getElementById('key-mode')
+let keyModeBtn = document.getElementById('key-mode')
 
-// FLIP animation guard
+// guard
 let animating = false
 
-let unshiftable = false
 // hit up the map, identify triad
 function calcTriadType() {
     const firstInterval = tri[1].abs - tri[0].abs
@@ -55,11 +52,6 @@ function calcTriadType() {
     third = tri[desc.thirdIdx]
     fifth = tri[desc.fifthIdx]
 
-    if (quality == 'aug') {
-        // COMING SOON
-        // rootAlpha += ` or ${tri[desc.thirdIdx].innerText} or ${fifth.innerText}`
-    }
-
     tri.forEach((div) => {
         div.lastElementChild.classList.add('active')
     })
@@ -73,15 +65,16 @@ function calcTriadType() {
 
 function alphaCheck() {
     if (quality == 'aug') {
-        //otherwise cycling back in forth for sharps/flats
         return
     }
+
     let rootAscii = root.innerText.charCodeAt(0)
-    let thirdAscii = third.lastElementChild.innerText.charCodeAt(0)
-    let fifthAscii = fifth.lastElementChild.innerText.charCodeAt(0)
+    let thirdAscii = third.innerText.charCodeAt(0)
+    let fifthAscii = fifth.innerText.charCodeAt(0)
 
     const distOne = thirdAscii - rootAscii
     const distTwo = fifthAscii - thirdAscii
+
     // ensure correct alpha spelling
     // alpha dist of either 2 or -5 covers thirds, sixths, or thirds wrapped
     // A B C D E F G A                     TODO: fix for F dim alphas
@@ -89,7 +82,6 @@ function alphaCheck() {
         !keyMode &&
         ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5))
     ) {
-        console.log('switch symbols on: ', keyMode, distOne, distTwo)
         switchSigns()
         updateDash()
         rootAlpha = root.innerText
@@ -146,11 +138,10 @@ function absToNote(note, flats) {
 // distance from nut to fret n
 function TwelfthRoot(n) {
     return 1 - Math.pow(2, -n / 12)
-    //2−n/12
 }
 
 // params: board css ID, empty ref array
-function buildFretboard(boardID, stringsArr) {
+function buildFretboard(boardID, gtrStringsArr) {
     const board = document.getElementById(boardID)
 
     // calc fret widths
@@ -188,7 +179,7 @@ function buildFretboard(boardID, stringsArr) {
             abs = abs + 5
         }
 
-        // bundle up baby, loosey goosey javascript nutZero.abs = abs
+        // bundle up baby, loosey goosey javascript
         nutZero.abs = abs
         nutZero.coord = [s, 0] // [string, fret]
         string.push(nutZero)
@@ -228,7 +219,7 @@ function buildFretboard(boardID, stringsArr) {
             row.appendChild(fw)
         }
 
-        stringsArr.push(string)
+        gtrStringsArr.push(string)
         board.appendChild(row)
     }
 
@@ -250,11 +241,10 @@ function buildFretboard(boardID, stringsArr) {
     })
     board.insertAdjacentElement('afterend', fretNums)
 
-    // add hidden, togglable notes
-    stringsArr.forEach((string) => {
+    // hidden, togglable notes
+    gtrStringsArr.forEach((string) => {
         string.forEach((note) => {
-            const noteText = document.createElement('p')
-            noteText.classList.add('emb')
+            const noteText = document.createElement('emb')
             noteText.innerText = absToNote(note.abs, false)
             note.appendChild(noteText)
         })
@@ -262,11 +252,8 @@ function buildFretboard(boardID, stringsArr) {
 
     board.addEventListener('click', (e) => {
         const fretDiv = e.target.closest('.fw') || e.target.closest('.nut')
-        // exclude highest playable note on fretboard
-        if (fretDiv && fretDiv != mainboard[5][LAST_FRET]) {
+        if (fretDiv) {
             if (boardID == 'board') {
-                cycling = false
-                snap.abs = []
                 initTriad(fretDiv)
             } else {
                 fretDiv.lastElementChild.classList.toggle('active')
@@ -274,15 +261,19 @@ function buildFretboard(boardID, stringsArr) {
         }
     })
 }
+
 // 0th Maj triad init
 function initTriad(fd) {
+    clearTri()
+
     wheelIdx = 0
     capturedRoot = null
-    clearTri()
+
     // starting on E A D G strings
     if (fd.coord[0] < mainboard.length - 2) {
         const thirdPitch = fd.abs + 4
         const fifthPitch = fd.abs + 7
+
         // proceedurally match targets
         for (let f = 0; f <= LAST_FRET; ++f) {
             if (mainboard[fd.coord[0] + 1][f].abs == thirdPitch) {
@@ -294,12 +285,14 @@ function initTriad(fd) {
         for (let f = 0; f < LAST_FRET; ++f) {
             if (mainboard[fd.coord[0] + 2][f].abs == fifthPitch) {
                 fifth = mainboard[fd.coord[0] + 2][f] // this is div
+
                 tri.push(fd)
                 tri.push(third)
                 tri.push(fifth)
                 break
             }
         }
+
         // B string, 2nd inversion
     } else if (fd.coord[0] == 4) {
         // |E---------
@@ -315,8 +308,12 @@ function initTriad(fd) {
         tri.push(fifth)
         tri.push(fd)
         tri.push(third)
+
         // high E string, 1st inversion
     } else {
+        // exclude highest playable note on fretboard
+        if (fd == mainboard[5][LAST_FRET]) return
+
         fifth = mainboard[4][fd.coord[1]]
         third = mainboard[3][fd.coord[1] + 1]
 
@@ -325,8 +322,10 @@ function initTriad(fd) {
         tri.push(fd)
     }
 
-    if (tri[0] == null) {
-        return
+    if (activeIntervalID) {
+        takeSnap()
+        clearInterval(activeIntervalID)
+        activeIntervalID = setInterval(runInterval, duration)
     }
     calcTriadType()
 }
@@ -334,23 +333,19 @@ function initTriad(fd) {
 // shifts triad given raw absolute pitch array and offset from
 // current string
 function shiftTriad(absPitches, offset) {
-    let newTriad = []
-    let s = tri[0].coord[0] + offset // starting string = current + 0/1/-1
+    let newTriadPitches = []
+    let s = tri[0].coord[0] + offset // starting string = current + 0/1/-1/x
 
     if (s < 0 || s > 3) {
-        console.log('⚡️ unshiftable')
-        if (cycling) {
-            unshiftable = true
-        }
+        console.log(`vertically unshiftable to ${s}`)
         glow()
         return false
     }
 
     for (const pitch of absPitches) {
         for (let f = 0; f <= LAST_FRET; f++) {
-            // console.log('s, f', s, f)
             if (mainboard[s][f].abs == pitch) {
-                newTriad.push(mainboard[s][f])
+                newTriadPitches.push(mainboard[s][f])
                 s++
                 break
             }
@@ -359,108 +354,91 @@ function shiftTriad(absPitches, offset) {
 
     // validate newTriad
     // TODO: evaluate neccesity of both conditions
-    if (newTriad.length == 3 && !newTriad.includes(undefined)) {
-        // animation guard
-        if (animating) {
-            return false
-        }
-
-        switch (true) {
-            // animate all 3 notes moving
-            case offset == 0 || offset < -1 || offset > 1: {
-                const triBundles = getTriBundles(newTriad)
-                animating = true
-                for (let el of triBundles) {
-                    requestAnimationFrame(() => {
-                        el.style.transition = 'transform 120ms ease'
-                        el.style.transform = `translate(${el.dx}px, ${el.dy}px)`
-                        el.addEventListener(
-                            'transitionend',
-                            () => {
-                                el.style.transition = ''
-                                el.style.transform = ''
-                                animating = false
-                                clearTri()
-
-                                tri = newTriad
-                                calcTriadType()
-                            },
-                            { once: true }
-                        )
-                    })
-                }
-                break
-            }
-            // animate single note, more performant
-            case offset == 1: {
-                const el = tri[0].lastElementChild
-
-                const oldRect = el.getBoundingClientRect()
-                const newRect =
-                    newTriad[2].lastElementChild.getBoundingClientRect()
-
-                const dx = newRect.left - oldRect.left
-                const dy = newRect.top - oldRect.top
-
-                animating = true
-                requestAnimationFrame(() => {
-                    el.style.transition = 'transform 120ms ease'
-                    el.style.transform = `translate(${dx}px, ${dy}px)`
-                    el.addEventListener(
-                        'transitionend',
-                        () => {
-                            el.style.transition = ''
-                            el.style.transform = ''
-                            animating = false
-
-                            clearTri()
-                            tri = newTriad
-                            calcTriadType()
-                        },
-                        { once: true }
-                    )
-                })
-                break
-            }
-            case offset == -1: {
-                const el = tri[2].lastElementChild
-                const oldRect = el.getBoundingClientRect()
-                const newRect =
-                    newTriad[0].lastElementChild.getBoundingClientRect()
-
-                const dx = newRect.left - oldRect.left
-                const dy = newRect.top - oldRect.top
-
-                // const refCopy = [...newTriad]
-                animating = true
-                requestAnimationFrame(() => {
-                    el.style.transition = 'transform 120ms ease'
-                    el.style.transform = `translate(${dx}px, ${dy}px)`
-                    el.addEventListener(
-                        'transitionend',
-                        () => {
-                            el.style.transition = ''
-                            el.style.transform = ''
-                            animating = false
-
-                            clearTri()
-                            tri = newTriad
-                            calcTriadType()
-                        },
-                        { once: true }
-                    )
-                })
-                break
-            }
-        }
-        return true
-    } else {
-        glow()
+    if (
+        newTriadPitches.length != 3 ||
+        animating
+        // newTriadPitches.includes(undefined)
+    ) {
+        // glow()
         return false
     }
+
+    let el, dx, dy
+    switch (true) {
+        // animate all 3 notes moving
+        case offset == 0 || offset < -1 || offset > 1: {
+            const bundles = getTriBundles(newTriadPitches)
+            animating = true
+            for (let e of bundles) {
+                requestAnimationFrame(() => {
+                    e.style.transition = 'transform 120ms ease'
+                    e.style.transform = `translate(${e.dx}px, ${e.dy}px)`
+                    e.addEventListener(
+                        'transitionend',
+                        () => {
+                            e.style.transition = ''
+                            e.style.transform = ''
+                            animating = false
+                            clearTri()
+
+                            tri = newTriadPitches
+                            calcTriadType()
+                        },
+                        { once: true }
+                    )
+                })
+            }
+            return true
+        }
+        // animate single note, more performant
+        case offset == 1: {
+            el = tri[0].lastElementChild
+
+            const oldRect = el.getBoundingClientRect()
+            const newRect =
+                newTriadPitches[2].lastElementChild.getBoundingClientRect()
+
+            dx = newRect.left - oldRect.left
+            dy = newRect.top - oldRect.top
+
+            break
+        }
+
+        case offset == -1: {
+            el = tri[2].lastElementChild
+            const oldRect = el.getBoundingClientRect()
+            const newRect =
+                newTriadPitches[0].lastElementChild.getBoundingClientRect()
+
+            dx = newRect.left - oldRect.left
+            dy = newRect.top - oldRect.top
+
+            break
+        }
+    }
+
+    animating = true
+    requestAnimationFrame(() => {
+        el.style.transition = 'transform 120ms ease'
+        el.style.transform = `translate(${dx}px, ${dy}px)`
+        el.addEventListener(
+            'transitionend',
+            () => {
+                el.style.transition = ''
+                el.style.transform = ''
+                animating = false
+
+                clearTri()
+                tri = newTriadPitches
+                calcTriadType()
+            },
+            { once: true }
+        )
+    })
+    return true
 }
 
-// returns dx,dy for each corresponding note
+// returns dx,dy for each note shift
 function getTriBundles(newTriad) {
     const triIntervals = `${tri[1].abs - tri[0].abs},${tri[2].abs - tri[1].abs}`
     const triDesc = triadMap.get(triIntervals)
@@ -473,6 +451,7 @@ function getTriBundles(newTriad) {
     const oldRoot = tri[triDesc.rootIdx].lastElementChild
     const oldThird = tri[triDesc.thirdIdx].lastElementChild
     const oldFifth = tri[triDesc.fifthIdx].lastElementChild
+
     const newRoot = newTriad[newDesc.rootIdx].lastElementChild
     const newThird = newTriad[newDesc.thirdIdx].lastElementChild
     const newFifth = newTriad[newDesc.fifthIdx].lastElementChild
@@ -487,11 +466,12 @@ function getTriBundles(newTriad) {
     const newFifthRect = newFifth.getBoundingClientRect()
 
     const rootDx = newRootRect.left - oldRootRect.left
-    const thirdDx = newThirdRect.left - oldThirdRect.left
-    const fifthDx = newFifthRect.left - oldFifthRect.left
-
     const rootDy = newRootRect.top - oldRootRect.top
+
+    const thirdDx = newThirdRect.left - oldThirdRect.left
     const thirdDy = newThirdRect.top - oldThirdRect.top
+
+    const fifthDx = newFifthRect.left - oldFifthRect.left
     const fifthDy = newFifthRect.top - oldFifthRect.top
 
     let triBundles = [oldRoot, oldThird, oldFifth]
@@ -510,22 +490,17 @@ function glow() {
     let refCopy = [...tri]
     for (let note of refCopy) {
         note.lastElementChild.classList.add('glow')
-        // race condition?
     }
     setTimeout(() => {
         for (let note of refCopy) {
             note.lastElementChild.classList.remove('glow')
         }
-    }, 200) // is that enough, marvin. apparently not
+    }, 200) // is that enough, marvin
 }
 
 function switchSigns() {
     let flats = mainboard[0][2].innerText.includes('b')
-    if (flats) {
-        signTog.innerText = '♭'
-    } else {
-        signTog.innerText = '♯'
-    }
+
     boards.forEach((b) => {
         for (let s = 0; s < b.length; s++) {
             for (let f = 0; f < b[s].length; f++) {
@@ -536,6 +511,12 @@ function switchSigns() {
             }
         }
     })
+
+    if (flats) {
+        signTog.innerText = '♭'
+    } else {
+        signTog.innerText = '♯'
+    }
 }
 
 // mutates pitch vals and calls shiftTriad()
@@ -544,6 +525,7 @@ function upTriad(lat = false) {
     tri.forEach((note) => {
         freqs.push(note.abs)
     })
+
     // use TriadMap + diatonicWheel array to get next freqs
     if (lat && keyMode) {
         // get next lateral chord index
@@ -554,21 +536,15 @@ function upTriad(lat = false) {
         }
 
         let nextQuality = diatonicWheel[wheelIdx].q
-        let nextIntervals = ''
+        let nextIntervals = '' // ex ("4,3") root major
 
         // backwards map key lookup
-
         for (let [k, v] of triadMap) {
             // inversion type will be the same for lateral changes
             if (v.inversion == inversion && v.quality == nextQuality) {
                 nextIntervals = k
                 break
             }
-        }
-        if (nextIntervals == null) {
-            wheelIdx--
-            glow()
-            return
         }
 
         // different span use based on inversion type
@@ -601,19 +577,18 @@ function upTriad(lat = false) {
         freqs[1] = freqs[2]
         freqs[2] = lp + 12
     }
-    // regular position upshift
+
+    // regular position up shift
     if (lat == false) {
         shiftTriad(freqs, 1)
+        return
         // allows possible wrap-around to next string set (both modes)
-    } else if (!shiftTriad(freqs, 0)) {
-        if (!shiftTriad(freqs, 1)) {
-            wheelIdx - 1 >= 0
-                ? wheelIdx--
-                : (wheelIdx = diatonicWheel.length - 1)
-            // or with mod
-            // wheelIdx =
-            //     (wheelIdx-- + diatonicWheel.length) % diatonicWheel.length
-        }
+    }
+
+    // corner hit -- use snapshot for auto cycling mode
+    if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, 1)) {
+        wheelIdx = (--wheelIdx + diatonicWheel.length) % diatonicWheel.length
+        if (activeIntervalID) snapBack()
     }
 }
 
@@ -624,10 +599,10 @@ function downTriad(lat = false) {
     })
 
     if (lat && keyMode) {
-        if (wheelIdx - 1 < 0) {
-            wheelIdx = diatonicWheel.length - 1
-        } else {
+        if (wheelIdx - 1 >= 0) {
             wheelIdx--
+        } else {
+            wheelIdx = diatonicWheel.length - 1
         }
 
         let nextQuality = diatonicWheel[wheelIdx].q
@@ -640,7 +615,7 @@ function downTriad(lat = false) {
             }
         }
 
-        // need next offset value when going backwards
+        // need next offset value when wrapping backwards
         let offset
         if (wheelIdx == diatonicWheel.length - 1) {
             offset = diatonicWheel[0].os
@@ -675,16 +650,19 @@ function downTriad(lat = false) {
         freqs[1] = freqs[0]
         freqs[0] = hp - 12
     }
-    // regular position upshift
+
+    // regular position down shift
     if (lat == false) {
         shiftTriad(freqs, -1)
         // allow possible wrap-around to next string set (both modes)
         // with proper animation type
-    } else if (lat && !shiftTriad(freqs, 0)) {
-        if (!shiftTriad(freqs, -1)) {
-            wheelIdx = (wheelIdx + 1) % diatonicWheel.length
-        }
         return
+    }
+
+    // corner
+    if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, -1)) {
+        wheelIdx = (wheelIdx + 1) % diatonicWheel.length
+        snapBack()
     }
 }
 
@@ -694,83 +672,92 @@ const majBtn = document.getElementById('maj')
 const dimBtn = document.getElementById('dim')
 const augBtn = document.getElementById('aug')
 const signTog = document.getElementById('sign-tog')
-
 const buttons = document.getElementById('buttons')
-const cycleBtns = document.getElementById('cycle-btns')
-const cycleSpeedBtns = document.getElementById('cycle-speeds')
 
-// auto cycling
-let cycling = false
+// triad to return to when we hit end of board
 let snap = {
     wheelIdx: null,
-    abs: [],
     loStr: 0,
+    abs: [],
 }
 
-cycleBtns.addEventListener('click', (e) => {
-    if (!cycling) {
-        tri.forEach((note) => {
-            snap.abs.push(note.abs)
-        })
-        snap.wheelIdx = wheelIdx
-        snap.loStr = tri[0].coord[0]
-    }
-    e.target.classList.toggle('active')
-    cycling = !cycling
+function takeSnap() {
+    // record original position
+    snap.wheelIdx = wheelIdx
+    snap.loStr = tri[0].coord[0]
 
-    let direction = e.target.id
-    recursiveCycle(direction)
-})
+    snap.abs = []
+    tri.forEach((note) => {
+        snap.abs.push(note.abs)
+    })
+}
+
+function snapBack() {
+    wheelIdx = snap.wheelIdx
+    shiftTriad(snap.abs, snap.loStr - tri[0].coord[0])
+}
+
+const cycleBtns = document.getElementById('cycle-btns')
+let activeDirection = null
+let activeIntervalID = null
+
+for (const btn of cycleBtns.children) {
+    btn.addEventListener('click', (e) => {
+        if (activeIntervalID) {
+            clearInterval(activeIntervalID)
+            activeIntervalID = null
+            activeDirection.classList.remove('active')
+            snap = {
+                wheelIdx: null,
+                abs: [],
+                loStr: 0,
+            }
+
+            if (e.target === activeDirection) return
+        }
+
+        takeSnap()
+        activeDirection = e.target
+        activeDirection.classList.add('active')
+        activeIntervalID = setInterval(runInterval, duration)
+    })
+}
+
+function runInterval() {
+    if (activeDirection.id == 'cycle-up') {
+        upTriad(true)
+    } else {
+        downTriad(true)
+    }
+}
 
 const speedDisplay = document.getElementById('speed-display')
-
-function updateSpeedDisplay() {
-    speedDisplay.innerText = `${duration / 1000} sec`
-}
-
-const speeds = [1, 3, 5, 7, 10, 15, 30]
+const speeds = [1, 2, 4, 8, 16, 32]
 let speedIdx = 1
 let duration = speeds[speedIdx] * 1000
+
+function updateSpeedDisplay() {
+    speedDisplay.innerText = `${speeds[speedIdx]} sec`
+}
+
 updateSpeedDisplay()
 
+const cycleSpeedBtns = document.getElementById('cycle-speeds')
 cycleSpeedBtns.addEventListener('click', (e) => {
     if (e.target.id == 'speed-up' && speedIdx > 0) {
         speedIdx--
     } else if (e.target.id == 'speed-down' && speedIdx < speeds.length - 1) {
         ++speedIdx
     }
+
     duration = speeds[speedIdx] * 1000
     updateSpeedDisplay()
-})
 
-let activeTimeoutID
-function recursiveCycle(direction) {
-    if (!cycling) {
-        // cycling = false // wtf
-        unshiftable = false
-        let cycleBtn = document.getElementById(direction)
-        cycleBtn.classList.remove('active')
-
-        clearTimeout(activeTimeoutID)
-        return
+    if (activeIntervalID) {
+        clearInterval(activeIntervalID)
+        activeIntervalID = setInterval(runInterval, duration)
     }
-    activeTimeoutID = setTimeout(() => {
-        if (direction == 'cycle-down') {
-            downTriad(true)
-        } else if (direction == 'cycle-up') {
-            upTriad(true)
-        }
-        if (unshiftable) {
-            // warp back to original position
-            const stringDiff = snap.loStr - tri[0].coord[0]
-            shiftTriad(snap.abs, stringDiff)
-            unshiftable = false
-            wheelIdx = snap.wheelIdx
-            calcTriadType()
-        }
-        recursiveCycle(direction)
-    }, duration)
-}
+})
 
 // delegate button click actions
 buttons.addEventListener('click', (e) => {
@@ -778,9 +765,9 @@ buttons.addEventListener('click', (e) => {
         displayWarning()
         return
     }
-    const buttID = e.target.id
+    const btnID = e.target.id
     // only clickable for valid keys
-    if (buttID == 'sign-tog') {
+    if (btnID == 'sign-tog') {
         switchSigns()
         updateDash()
         return
@@ -790,7 +777,7 @@ buttons.addEventListener('click', (e) => {
 
     clearStyle() // pre-emptive
     let ok = false
-    switch (buttID) {
+    switch (btnID) {
         case quality: {
             glow()
             break
@@ -801,20 +788,14 @@ buttons.addEventListener('click', (e) => {
         }
         case 'min': {
             ok = toMin(thirdIdx, fifthIdx)
-            if (keyMode) toggleKeyMode()
-            cycling = false
             break
         }
         case 'dim': {
             ok = toDim(thirdIdx, fifthIdx)
-            if (keyMode) toggleKeyMode()
-            cycling = false
             break
         }
         case 'aug': {
             ok = toAug(thirdIdx, fifthIdx)
-            if (keyMode) toggleKeyMode()
-            cycling = false
             break
         }
         case 'key-mode': {
@@ -823,6 +804,7 @@ buttons.addEventListener('click', (e) => {
     }
     if (ok) {
         calcTriadType()
+        if (keyMode) toggleKeyMode()
     } else {
         restoreStyle()
         glow()
@@ -874,7 +856,6 @@ document.addEventListener('keydown', (event) => {
         case 'ArrowLeft':
         case 'h': {
             downTriad(true)
-            break
         }
     }
 })
@@ -899,16 +880,16 @@ const qualityBtnz = [minBtn, majBtn, dimBtn, augBtn]
 function updateUI() {
     updateDash()
 
-    for (let s of qualityBtnz) {
-        s.classList.remove('active')
+    for (let btn of qualityBtnz) {
+        btn.classList.remove('active')
     }
 
     if (!keyMode) {
-        keyModeButton.classList.remove('visible', 'active')
+        keyModeBtn.classList.remove('visible', 'active')
         switch (quality) {
             case 'maj':
                 majBtn.classList.add('active')
-                keyModeButton.classList.add('visible')
+                keyModeBtn.classList.add('visible')
                 break
             case 'min':
                 minBtn.classList.add('active')
@@ -924,6 +905,7 @@ function updateUI() {
 
 function validSwitchableKey() {
     let check = keyMode ? capturedRoot : rootAlpha
+
     let validKeys = ['C', 'Gb', 'F#']
     for (let key of validKeys) {
         if (check == key) {
@@ -935,19 +917,21 @@ function validSwitchableKey() {
 
 function toggleKeyMode() {
     keyMode = !keyMode
+    keyModeBtn.classList.toggle('active')
+
     if (keyMode) {
         capturedRoot = rootAlpha
         wheelIdx = 0
     } else {
         capturedRoot = null
-        // remove visible
     }
+
+    // what is this preventing?
     if (validSwitchableKey()) {
         signTog.classList.remove('inactive')
     } else {
         signTog.classList.add('inactive')
     }
-    keyModeButton.classList.toggle('active')
 }
 
 function displayWarning() {
@@ -955,8 +939,8 @@ function displayWarning() {
     const warning = document.createElement('h3')
     warning.className = 'select-warn'
     warning.innerText = 'please select a note first'
-    let lc = dash.lastElementChild
-    dash.appendChild(warning, lc)
+
+    dash.appendChild(warning)
 
     setTimeout(() => {
         warning.remove()
@@ -979,6 +963,8 @@ function toMaj(thirdIdx, fifthIdx) {
 }
 
 function toMin(thirdIdx, fifthIdx) {
+    // mainboard[third.s][third.f - 1]
+
     if (quality == 'maj' && third.previousElementSibling) {
         tri[thirdIdx] = third.previousElementSibling
     } else if (quality == 'dim') {
@@ -1029,7 +1015,6 @@ function toAug(thirdIdx, fifthIdx) {
     }
     return true
 }
-console.log(TwelfthRoot(12)) // HARMONIC
 
 buildFretboard('board', mainboard)
 buildFretboard('board2', freeboard)

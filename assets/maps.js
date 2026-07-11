@@ -107,6 +107,7 @@ export const triadMap = new Map([
 //  	w	w	h	w	w 	w
 // could first identify what current triad is
 // keep the inversion type, increment diatonically
+// os: offset moving upward
 export const diatonicWheel = [
     { q: 'maj', os: 1 },
     { q: 'min', os: 2 },
