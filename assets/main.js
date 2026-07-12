@@ -78,10 +78,7 @@ function alphaCheck() {
     // ensure correct alpha spelling
     // alpha dist of either 2 or -5 covers thirds, sixths, or thirds wrapped
     // A B C D E F G A                     TODO: fix for F dim alphas
-    if (
-        !keyMode &&
-        ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5))
-    ) {
+    if ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5)) {
         switchSigns()
         updateDash()
         rootAlpha = root.innerText
@@ -355,8 +352,7 @@ function shiftTriad(absPitches, offset) {
     // validate newTriad
     // TODO: evaluate neccesity of both conditions
     if (
-        newTriadPitches.length != 3 ||
-        animating
+        newTriadPitches.length != 3
         // newTriadPitches.includes(undefined)
     ) {
         // glow()
@@ -378,11 +374,11 @@ function shiftTriad(absPitches, offset) {
                         () => {
                             e.style.transition = ''
                             e.style.transform = ''
-                            animating = false
                             clearTri()
 
                             tri = newTriadPitches
                             calcTriadType()
+                            animating = false
                         },
                         { once: true }
                     )
@@ -521,6 +517,7 @@ function switchSigns() {
 
 // mutates pitch vals and calls shiftTriad()
 function upTriad(lat = false) {
+    if (animating) return
     let freqs = []
     tri.forEach((note) => {
         freqs.push(note.abs)
@@ -593,6 +590,9 @@ function upTriad(lat = false) {
 }
 
 function downTriad(lat = false) {
+    if (animating) {
+        return
+    }
     let freqs = []
     tri.forEach((note) => {
         freqs.push(note.abs)
@@ -662,7 +662,7 @@ function downTriad(lat = false) {
     // corner
     if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, -1)) {
         wheelIdx = (wheelIdx + 1) % diatonicWheel.length
-        snapBack()
+        if (activeIntervalID) snapBack()
     }
 }
 
