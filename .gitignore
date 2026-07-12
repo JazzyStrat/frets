@@ -4,5 +4,7 @@ assets/shifters.js
 **/.DS_Store
 go.mod
 go.sum
+main.go
+.air.toml
 # todo.txt
 
