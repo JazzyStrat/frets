@@ -1,6 +1,6 @@
-import { triadMap, noteMapFlats, noteMapSharps, diatonicWheel } from './maps.js'
-
 const LAST_FRET = 15
+
+import { triadMap, noteMapFlats, noteMapSharps, diatonicWheel } from './maps.js'
 
 const mainboard = []
 const freeboard = []
@@ -25,7 +25,6 @@ let capturedRoot = null
 let wheelIdx
 let keyModeBtn = document.getElementById('key-mode')
 
-// guard
 let animating = false
 
 // hit up the map, identify triad
@@ -77,7 +76,7 @@ function alphaCheck() {
 
     // ensure correct alpha spelling
     // alpha dist of either 2 or -5 covers thirds, sixths, or thirds wrapped
-    // A B C D E F G A                     TODO: fix for F dim alphas
+    // A B C D E F G A                     TODO: fix up for F dim alphas
     if ((distOne != 2 && distOne != -5) || (distTwo != 2 && distTwo != -5)) {
         switchSigns()
         updateDash()
@@ -110,6 +109,7 @@ function restoreStyle() {
     tri.forEach((div) => {
         div.lastElementChild.classList.add('active')
     })
+
     const desc = calcTriadType()
     tri[desc.thirdIdx].lastElementChild.classList.add('third-color')
     tri[desc.fifthIdx].lastElementChild.classList.add('fifth-color')
@@ -295,6 +295,7 @@ function initTriad(fd) {
         // |E---------
         // |B---------
         // |G---------
+
         // unlayable chord
         if (!mainboard[3][fd.coord[1] - 1] || !mainboard[5][fd.coord[1] - 1]) {
             return
@@ -349,19 +350,14 @@ function shiftTriad(absPitches, offset) {
         }
     }
 
-    // validate newTriad
-    // TODO: evaluate neccesity of both conditions
-    if (
-        newTriadPitches.length != 3
-        // newTriadPitches.includes(undefined)
-    ) {
+    if (newTriadPitches.length != 3) {
         // glow()
         return false
     }
 
     let el, dx, dy
     switch (true) {
-        // animate all 3 notes moving
+        // animate all 3 notes
         case offset == 0 || offset < -1 || offset > 1: {
             const bundles = getTriBundles(newTriadPitches)
             animating = true
@@ -422,11 +418,11 @@ function shiftTriad(absPitches, offset) {
             () => {
                 el.style.transition = ''
                 el.style.transform = ''
-                animating = false
 
                 clearTri()
                 tri = newTriadPitches
                 calcTriadType()
+                animating = false
             },
             { once: true }
         )
@@ -435,50 +431,33 @@ function shiftTriad(absPitches, offset) {
 }
 
 // returns dx,dy for each note shift
-function getTriBundles(newTriad) {
+function getTriBundles(newTri) {
+    function getNotes(t, d) {
+        return [
+            t[d.rootIdx].lastElementChild,
+            t[d.thirdIdx].lastElementChild,
+            t[d.fifthIdx].lastElementChild,
+        ]
+    }
+
     const triIntervals = `${tri[1].abs - tri[0].abs},${tri[2].abs - tri[1].abs}`
+    const newInvs = `${newTri[1].abs - newTri[0].abs},${newTri[2].abs - newTri[1].abs}`
     const triDesc = triadMap.get(triIntervals)
+    const newDesc = triadMap.get(newInvs)
 
-    const newIntervals =
-        `${newTriad[1].abs - newTriad[0].abs},` +
-        `${newTriad[2].abs - newTriad[1].abs}`
-    const newDesc = triadMap.get(newIntervals)
+    const oldNotes = getNotes(tri, triDesc)
+    const newNotes = getNotes(newTri, newDesc)
 
-    const oldRoot = tri[triDesc.rootIdx].lastElementChild
-    const oldThird = tri[triDesc.thirdIdx].lastElementChild
-    const oldFifth = tri[triDesc.fifthIdx].lastElementChild
+    console.log('good girl')
+    return oldNotes.map((oldNote, i) => {
+        const oldRect = oldNote.getBoundingClientRect()
+        const newRect = newNotes[i].getBoundingClientRect()
 
-    const newRoot = newTriad[newDesc.rootIdx].lastElementChild
-    const newThird = newTriad[newDesc.thirdIdx].lastElementChild
-    const newFifth = newTriad[newDesc.fifthIdx].lastElementChild
+        oldNote.dx = newRect.x - oldRect.x
+        oldNote.dy = newRect.y - oldRect.y
 
-    const oldRootRect = oldRoot.getBoundingClientRect()
-    const newRootRect = newRoot.getBoundingClientRect()
-
-    const oldThirdRect = oldThird.getBoundingClientRect()
-    const newThirdRect = newThird.getBoundingClientRect()
-
-    const oldFifthRect = oldFifth.getBoundingClientRect()
-    const newFifthRect = newFifth.getBoundingClientRect()
-
-    const rootDx = newRootRect.left - oldRootRect.left
-    const rootDy = newRootRect.top - oldRootRect.top
-
-    const thirdDx = newThirdRect.left - oldThirdRect.left
-    const thirdDy = newThirdRect.top - oldThirdRect.top
-
-    const fifthDx = newFifthRect.left - oldFifthRect.left
-    const fifthDy = newFifthRect.top - oldFifthRect.top
-
-    let triBundles = [oldRoot, oldThird, oldFifth]
-    triBundles[0].dx = rootDx
-    triBundles[0].dy = rootDy
-    triBundles[1].dx = thirdDx
-    triBundles[1].dy = thirdDy
-    triBundles[2].dx = fifthDx
-    triBundles[2].dy = fifthDy
-
-    return triBundles
+        return oldNote
+    })
 }
 
 // indicate move not possible / current state
@@ -584,7 +563,9 @@ function upTriad(lat = false) {
 
     // corner hit -- use snapshot for auto cycling mode
     if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, 1)) {
-        wheelIdx = (--wheelIdx + diatonicWheel.length) % diatonicWheel.length
+        if (keyMode)
+            wheelIdx =
+                (--wheelIdx + diatonicWheel.length) % diatonicWheel.length
         if (activeIntervalID) snapBack()
     }
 }
@@ -593,6 +574,7 @@ function downTriad(lat = false) {
     if (animating) {
         return
     }
+
     let freqs = []
     tri.forEach((note) => {
         freqs.push(note.abs)
@@ -661,7 +643,7 @@ function downTriad(lat = false) {
 
     // corner
     if (!shiftTriad(freqs, 0) && !shiftTriad(freqs, -1)) {
-        wheelIdx = (wheelIdx + 1) % diatonicWheel.length
+        if (keyMode) wheelIdx = (wheelIdx + 1) % diatonicWheel.length
         if (activeIntervalID) snapBack()
     }
 }
@@ -732,31 +714,44 @@ function runInterval() {
 }
 
 const speedDisplay = document.getElementById('speed-display')
-const speeds = [1, 2, 4, 8, 16, 32]
-let speedIdx = 1
-let duration = speeds[speedIdx] * 1000
+// const speeds = [1, 2, 4, 8, 16, 32]
+// let speedIdx = 1
+let duration = 3000
 
-function updateSpeedDisplay() {
-    speedDisplay.innerText = `${speeds[speedIdx]} sec`
-}
-
-updateSpeedDisplay()
-
-const cycleSpeedBtns = document.getElementById('cycle-speeds')
-cycleSpeedBtns.addEventListener('click', (e) => {
-    if (e.target.id == 'speed-up' && speedIdx > 0) {
-        speedIdx--
-    } else if (e.target.id == 'speed-down' && speedIdx < speeds.length - 1) {
-        ++speedIdx
-    }
-
-    duration = speeds[speedIdx] * 1000
-    updateSpeedDisplay()
-
+const speeder = document.getElementById('speed')
+speeder.addEventListener('input', (e) => {
+    duration = e.target.value * 1000
     if (activeIntervalID) {
         clearInterval(activeIntervalID)
         activeIntervalID = setInterval(runInterval, duration)
     }
+    updateSpeedDisplay()
+})
+
+function updateSpeedDisplay() {
+    speedDisplay.innerText = `${speeder.value} sec`
+}
+
+updateSpeedDisplay()
+
+const paint = () => {
+    const pct =
+        ((speeder.value - speeder.min) / (speeder.max - speeder.min)) * 100
+    speeder.style.background = `linear-gradient(to right, #535F4F 0%, #535F4F ${pct}%, #3C3442 ${pct}%, #3C3442 100%)`
+}
+
+paint()
+speeder.addEventListener('input', paint)
+const cycleSpeedBtns = document.getElementById('cycle-speeds')
+cycleSpeedBtns.addEventListener('click', (e) => {
+    // if (e.target.id == 'speed-up' && speedIdx > 0) {
+    //     speedIdx--
+    // } else if (e.target.id == 'speed-down' && speedIdx < speeds.length - 1) {
+    //     ++speedIdx
+    // }
+    //
+    // duration = speeds[speedIdx] * 1000
+    // updateSpeedDisplay()
 })
 
 // delegate button click actions
@@ -772,6 +767,9 @@ buttons.addEventListener('click', (e) => {
         updateDash()
         return
     }
+
+    if (btnID == 'speed' || btnID == 'row-two') return
+
     const thirdIdx = tri.indexOf(third)
     const fifthIdx = tri.indexOf(fifth)
 

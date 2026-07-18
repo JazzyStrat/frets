@@ -237,6 +237,7 @@ emb {
     opacity: 0;
 }
 
+/* not redundant, used for emb key */ 
 .emb {
     width: 36px;
     height: 36px;
@@ -387,7 +388,40 @@ background: #535F4F !important;
 /* float: right; */
 }
 
-#speed-display {
+#speed {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+}
+
+#speed::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #535F4F;
+  cursor: pointer;
+}
+
+#speed::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #535F4F;
+  cursor: pointer;
+}
+
+#speed::-moz-range-track {
+  height: 6px;
+  border-radius: 4px;
+  background: #3C3442;
+}#speed-display {
 	background-color:#3D3341 !important;
 }
 
@@ -402,7 +436,7 @@ margin:0 12px;
 #dpad {
 	display: flex;
 	flex-direction: column;
-	align-items:center;
+	align-items: center;
 }
 
 #dpad button {
